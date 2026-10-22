@@ -1,6 +1,8 @@
 # Shadow Finances
 
 Aplicativo mobile de finanças pessoais em Flutter, com Material Design 3 como base visual.
+**Código aberto** sob a GPL-3.0 ([LICENSE](LICENSE)): tudo o que entra no git é
+público. Veja [Código aberto e segurança](#código-aberto-e-segurança).
 
 ## Ambiente
 
@@ -14,8 +16,9 @@ Dependências do pub ficam em `./.pub-cache` (dentro do projeto, ignorado pelo g
 o cache do Gradle fica no volume nomeado `gradle-cache`. O `pubspec.lock` é
 versionado para garantir builds idênticas.
 
-Para mudar a versão do Flutter, altere `FLUTTER_VERSION` no Dockerfile **e** a tag
-`image:` em [compose.yaml](compose.yaml), depois rode `make image`.
+Para mudar a versão do Flutter, altere `FLUTTER_VERSION` e `FLUTTER_COMMIT` no
+Dockerfile **e** a tag `image:` em [compose.yaml](compose.yaml), depois rode
+`make image` (como conferir os hashes está em [Código aberto e segurança](#código-aberto-e-segurança)).
 
 ## Comandos
 
@@ -46,6 +49,9 @@ Nunca rode `flutter`/`dart` direto no host. Para comandos avulsos:
   ou convenções. O CLAUDE.md guarda as regras detalhadas; o README, a visão geral
   para pessoas.
 - `make analyze` e `make test` devem passar antes de concluir qualquer mudança.
+- **O código é aberto.** Antes de concluir qualquer mudança, confira as regras
+  de [Código aberto e segurança](#código-aberto-e-segurança): nada de segredos,
+  dados pessoais ou dados do usuário saindo do dispositivo.
 
 ## Arquitetura
 
@@ -247,3 +253,70 @@ falha se alguma tradução faltar.
 - Exceções que não são traduzidas: o nome "Shadow Finances" (marca) e os nomes
   dos idiomas na tela de escolha, que aparecem escritos no próprio idioma
   (`AppLanguage.nativeName`), para que qualquer pessoa reconheça o seu.
+
+## Código aberto e segurança
+
+O projeto é distribuído sob a **GPL-3.0** ([LICENSE](LICENSE)), com copyright
+de Emily Sombra. Tudo o que entra no git, **inclusive o histórico**, é público:
+apagar um arquivo num commit novo não o remove dos commits antigos.
+
+### O que nunca vai para o repositório
+
+- **Segredos:** senhas, tokens, chaves de API, keystores, `key.properties`,
+  `.env`, `google-services.json`. Valores sensíveis entram por arquivo ignorado
+  pelo git ou variável de ambiente. O [.gitignore](.gitignore) já bloqueia os
+  formatos comuns; um tipo novo de credencial deve ser adicionado lá na mesma
+  mudança que passar a usá-lo.
+- **Dados pessoais e da máquina de quem desenvolve:** nomes de usuário,
+  caminhos como `/home/...`, e-mails, dados financeiros reais em testes,
+  exemplos ou capturas de tela. Use sempre dados fictícios.
+- Se um segredo chegar a ser commitado, trate-o como **vazado**: revogue ou
+  troque a credencial primeiro; reescrever o histórico não basta (cópias e
+  forks já podem existir).
+
+### Assinatura do Android
+
+Builds de release assinam com a chave descrita em `android/key.properties`
+(fora do git), que aponta para o keystore:
+
+```properties
+storeFile=/caminho/fora/do/repositorio/upload-keystore.jks
+storePassword=...
+keyAlias=upload
+keyPassword=...
+```
+
+Sem esse arquivo, o release cai na chave de debug só para que
+`flutter run --release` funcione localmente. **Nunca distribua um APK assim.**
+
+### Dados do usuário
+
+O app lida com dados financeiros, que são sensíveis:
+
+- Os dados ficam **só no dispositivo**. Nada de telemetria, analytics, crash
+  reporting ou envio a servidores sem discussão prévia e consentimento
+  explícito do usuário.
+- Não registre (`print`, `debugPrint`, logs) valores, descrições de transações
+  ou qualquer dado do usuário.
+- Antes de começar a guardar dados financeiros (hoje só há idioma e tema),
+  discuta criptografia em repouso e as regras de backup do Android
+  (`android:allowBackup`, `dataExtractionRules`).
+- Permissões novas no `AndroidManifest.xml` / `Info.plist` só com justificativa;
+  o app hoje não pede nenhuma.
+
+### Dependências e cadeia de build
+
+- Só pacotes com manutenção ativa e **licença compatível com a GPL-3.0** (MIT,
+  BSD, Apache-2.0, LGPL, GPL...). Pacotes sem licença ou proprietários não
+  entram. Confira a licença no pub.dev antes de adicionar.
+- O `flutter pub get` mostra avisos de segurança (*advisories*) das
+  dependências; eles não podem ser ignorados.
+- O [Dockerfile](docker/Dockerfile) verifica a integridade de tudo que baixa.
+  Ao mudar uma versão, atualize também o hash correspondente:
+  - `FLUTTER_COMMIT`: `git ls-remote https://github.com/flutter/flutter.git refs/tags/<versão>`.
+  - `ANDROID_CMDLINE_TOOLS_SHA256`: baixe o zip, confira se o SHA-1 dele é o
+    publicado pelo Google em <https://dl.google.com/android/repository/repository2-3.xml>
+    e só então gere o SHA-256 com `sha256sum`.
+- Serviços de desenvolvimento escutam só em `127.0.0.1` ([compose.yaml](compose.yaml)),
+  para não ficarem expostos na rede local.
+

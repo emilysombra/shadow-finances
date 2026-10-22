@@ -16,7 +16,8 @@ services:
       - .:/app
       - gradle-cache:/home/dev/.gradle
     ports:
-      - "${WEB_PORT:-8080}:8080"
+      # Só localhost: o servidor de desenvolvimento não fica exposto na rede.
+      - "127.0.0.1:${WEB_PORT:-8080}:8080"
     stdin_open: true
     tty: true
 

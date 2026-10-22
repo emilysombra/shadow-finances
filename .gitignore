@@ -49,3 +49,15 @@ app.*.map.json
 
 # Traduções geradas a partir de lib/l10n/*.arb (recriadas por make deps/test/run)
 /lib/l10n/app_localizations*.dart
+
+# Segredos e credenciais: nunca versionar (o projeto é de código aberto).
+.env
+.env.*
+*.jks
+*.keystore
+*.p12
+*.pem
+*.key
+key.properties
+google-services.json
+GoogleService-Info.plist

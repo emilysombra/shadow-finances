@@ -42,3 +42,18 @@ com camadas separadas:
   nas configurações ou segue o do dispositivo.
 
 Regras detalhadas, estrutura de pastas e detalhes do ambiente em [CLAUDE.md](CLAUDE.md).
+
+## Privacidade
+
+Seus dados financeiros ficam só no seu dispositivo: o app não envia nada para
+servidores e não coleta estatísticas de uso.
+
+## Licença
+
+Copyright © 2026 Emily Sombra.
+
+Shadow Finances é software livre: você pode redistribuí-lo e/ou modificá-lo sob
+os termos da [Licença Pública Geral GNU, versão 3](LICENSE) (GPL-3.0). Versões
+modificadas que forem distribuídas também precisam ter o código aberto sob a
+mesma licença.
+

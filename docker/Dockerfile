@@ -3,7 +3,11 @@
 FROM eclipse-temurin:17-jdk-noble
 
 ARG FLUTTER_VERSION=3.47.7
+# Hashes conferidos na mão contra as fontes oficiais. Ao mudar uma versão,
+# atualize o hash correspondente (ver "Código aberto e segurança" no CLAUDE.md).
+ARG FLUTTER_COMMIT=abaf9c523780a608bd46686fd5e53740a07077f8
 ARG ANDROID_CMDLINE_TOOLS=16111833
+ARG ANDROID_CMDLINE_TOOLS_SHA256=0877a1d048fe4a24efe2eff536ca4223f7adeb58648bb81909d33c446918cfa8
 ARG ANDROID_PLATFORM=android-36
 ARG ANDROID_BUILD_TOOLS=36.0.0
 ARG USER_UID=1000
@@ -39,6 +43,7 @@ USER dev
 # Android SDK
 RUN curl -fsSL -o /tmp/cmdline-tools.zip \
         https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_CMDLINE_TOOLS}_latest.zip \
+    && echo "${ANDROID_CMDLINE_TOOLS_SHA256}  /tmp/cmdline-tools.zip" | sha256sum -c - \
     && mkdir -p ${ANDROID_HOME}/cmdline-tools \
     && unzip -q /tmp/cmdline-tools.zip -d ${ANDROID_HOME}/cmdline-tools \
     && mv ${ANDROID_HOME}/cmdline-tools/cmdline-tools ${ANDROID_HOME}/cmdline-tools/latest \
@@ -46,8 +51,10 @@ RUN curl -fsSL -o /tmp/cmdline-tools.zip \
     && yes | sdkmanager --licenses > /dev/null \
     && sdkmanager --install "platform-tools" "platforms;${ANDROID_PLATFORM}" "build-tools;${ANDROID_BUILD_TOOLS}" > /dev/null
 
-# Flutter SDK fixado na tag exata
+# Flutter SDK fixado na tag exata; o commit é conferido porque tags do git
+# podem ser movidas.
 RUN git clone --depth 1 --branch ${FLUTTER_VERSION} https://github.com/flutter/flutter.git ${FLUTTER_HOME} \
+    && test "$(git -C ${FLUTTER_HOME} rev-parse HEAD)" = "${FLUTTER_COMMIT}" \
     && flutter config --no-analytics --no-cli-animations \
         --no-enable-linux-desktop --no-enable-macos-desktop --no-enable-windows-desktop \
     && dart --disable-analytics \
