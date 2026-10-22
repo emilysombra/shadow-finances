@@ -7,7 +7,7 @@ RUN_DEV := $(COMPOSE) run --rm flutter-device
 
 .DEFAULT_GOAL := help
 
-.PHONY: help image deps run-web run-android devices apk test analyze format format-check doctor shell clean
+.PHONY: help image deps l10n run-web run-android devices apk test analyze format format-check doctor shell clean
 
 help: ## Lista os comandos disponíveis
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -17,6 +17,9 @@ image: ## Constrói a imagem Docker de desenvolvimento
 
 deps: ## Instala as dependências (flutter pub get) em ./.pub-cache
 	$(RUN) flutter pub get
+
+l10n: ## Regenera as traduções a partir de lib/l10n/*.arb
+	$(RUN) flutter gen-l10n
 
 run-web: ## Roda o app no navegador em http://localhost:8080
 	$(COMPOSE) run --rm --service-ports flutter \

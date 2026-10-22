@@ -46,3 +46,6 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Traduções geradas a partir de lib/l10n/*.arb (recriadas por make deps/test/run)
+/lib/l10n/app_localizations*.dart

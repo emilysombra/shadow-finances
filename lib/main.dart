@@ -1,44 +1,20 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:provider/provider.dart';
 
-void main() {
-  runApp(const ShadowFinancesApp());
-}
+import 'package:shadow_finances/app.dart';
+import 'package:shadow_finances/config/dependencies.dart';
+import 'package:shadow_finances/ui/core/formatting/br_format.dart';
 
-class ShadowFinancesApp extends StatelessWidget {
-  const ShadowFinancesApp({super.key});
+Future<void> main() async {
+  // Necessário antes de usar plugins (shared_preferences) fora de um widget.
+  WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting(BrFormat.locale);
 
-  static const String title = 'Shadow Finances';
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: title,
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
-      ),
-      darkTheme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.indigo,
-          brightness: Brightness.dark,
-        ),
-      ),
-      home: const HomePage(),
-    );
-  }
-}
-
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return Scaffold(
-      body: Center(
-        child: Text(ShadowFinancesApp.title, style: textTheme.headlineMedium),
-      ),
-    );
-  }
+  runApp(
+    MultiProvider(
+      providers: await createDependencies(),
+      child: const ShadowFinancesApp(),
+    ),
+  );
 }

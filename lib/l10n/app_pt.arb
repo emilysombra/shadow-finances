@@ -1,0 +1,19 @@
+{
+  "@@locale": "pt",
+  "homeTagline": "Suas finanças em um só lugar.",
+  "@homeTagline": {
+    "description": "Frase exibida no centro da tela inicial."
+  },
+  "settingsTitle": "Configurações",
+  "@settingsTitle": {
+    "description": "Título da tela de configurações e dica do botão que a abre."
+  },
+  "languageSectionTitle": "Idioma",
+  "@languageSectionTitle": {
+    "description": "Cabeçalho da seção de escolha de idioma nas configurações."
+  },
+  "languageFollowDevice": "Usar idioma do dispositivo",
+  "@languageFollowDevice": {
+    "description": "Opção que faz o app seguir o idioma configurado no sistema."
+  }
+}
