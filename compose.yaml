@@ -1,0 +1,33 @@
+name: shadow-finances
+
+services:
+  flutter:
+    build:
+      context: ./docker
+      args:
+        USER_UID: ${USER_UID:-1000}
+        USER_GID: ${USER_GID:-1000}
+    image: shadow-finances-dev:flutter-3.47.7
+    working_dir: /app
+    environment:
+      # Dependências Dart/Flutter ficam dentro do projeto (./.pub-cache).
+      PUB_CACHE: /app/.pub-cache
+    volumes:
+      - .:/app
+      - gradle-cache:/home/dev/.gradle
+    ports:
+      - "${WEB_PORT:-8080}:8080"
+    stdin_open: true
+    tty: true
+
+  # Mesmo ambiente, com acesso USB para rodar em um dispositivo Android físico.
+  flutter-device:
+    extends: flutter
+    build: !reset null
+    privileged: true
+    ports: !reset []
+    volumes:
+      - /dev/bus/usb:/dev/bus/usb
+
+volumes:
+  gradle-cache:
