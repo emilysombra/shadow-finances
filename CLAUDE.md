@@ -81,15 +81,34 @@ Regras adicionais:
   (`createDependencies`); `providersFor` recebe os Repositories para que os
   testes passem versões falsas.
 - **ViewModels de tela** são criados na rota ([lib/routing/router.dart](lib/routing/router.dart))
-  e entregues à tela pelo construtor (`SettingsScreen(viewModel: ...)`).
+  com `_withViewModel` e entregues à tela pelo construtor
+  (`HomeScreen(viewModel: ...)`). O `_withViewModel` usa um
+  `ChangeNotifierProvider`, que chama `dispose()` quando a tela sai da pilha;
+  ViewModels que escutam algo (ex.: um `Stream`) cancelam a escuta no
+  `dispose()`.
   **ViewModels de estado global** (hoje só `SettingsViewModel`, porque idioma e
   tema afetam o app inteiro) são registrados em `config/dependencies.dart`, carregados
   antes do `runApp` e lidos pela rota com `context.read()`.
+- **Estado compartilhado entre telas mora num Repository**, nunca em
+  argumentos de rota nem num ViewModel de outra tela. O Repository guarda o
+  valor e avisa as mudanças por um `Stream`; cada ViewModel interessado
+  escuta e se atualiza sozinho. Ex.: o período escolhido
+  (`PeriodFilterRepository`) vale para todas as telas: escolher um filtro em
+  qualquer uma atualiza e recarrega as outras, inclusive as que estão por
+  baixo na pilha. Não passe esse tipo de estado por `arguments` de rota.
 - Tela sem estado não precisa de ViewModel; ganha um assim que tiver dados ou
   ações (como a `HomeScreen`, que ganhou o `HomeViewModel` ao exibir o resumo).
-  Um ViewModel pode usar vários Repositories (o `HomeViewModel` usa contas,
-  receitas e despesas); se essa combinação passar a ser usada por outro
-  ViewModel, extraia-a para um caso de uso.
+  Um ViewModel pode usar vários Repositories; quando a mesma combinação é
+  usada por mais de um ViewModel, ela vira um caso de uso (ex.:
+  `GetPeriodOverviewUseCase`, usado pela tela inicial e pela de transações).
+- **Telas de período** (inicial e transações) compartilham o estado pela
+  classe base `PeriodViewModel` ([lib/ui/core/view_models/period_view_model.dart](lib/ui/core/view_models/period_view_model.dart):
+  escuta o filtro do `PeriodFilterRepository`, intervalo, resumo,
+  transações, erro e descarte de respostas atrasadas ou de telas fechadas) e
+  a tela pelo `PeriodOverviewScrollView` (`ui/core/widgets/`). Cada ViewModel
+  acrescenta só o que é dele (ex.: `HomeViewModel` limita a lista a
+  `recentLimit` = 5). Classes base de ViewModels usadas por várias
+  funcionalidades ficam em `ui/core/view_models/`.
 - Enquanto uma funcionalidade não tem dados reais, use uma implementação
   provisória do Repository (sufixo `Static`, ex.: `ExpenseRepositoryStatic`)
   que lê os dados fictícios do `SampleDataService`
@@ -145,7 +164,9 @@ Regras adicionais:
 - Imports sempre no formato `package:shadow_finances/...`, nunca relativos
   (exceto testes importando `test/fakes/`).
 - **Casos de uso** (`domain/use_cases/`) só quando uma lógica combinar vários
-  Repositories ou for reutilizada por vários ViewModels. Não crie por padrão.
+  Repositories **e** for reutilizada por vários ViewModels. Não crie por
+  padrão. São classes com um método `call` (chamadas como função:
+  `getPeriodOverview(range)`), registradas em `config/dependencies.dart`.
 - Organização **por funcionalidade** dentro de `ui/` (ex.: `ui/transactions/`,
   `ui/settings/`); `data/` e `domain/` são compartilhados.
 - Testes espelham `lib/` em `test/`. ViewModels e Repositories têm testes de
@@ -160,6 +181,7 @@ lib/
   config/dependencies.dart  # registro dos providers
   routing/                  # rotas do app
   domain/models/            # modelos imutáveis em Dart puro
+  domain/use_cases/         # lógica que combina Repositories, usada por vários ViewModels
   data/
     repositories/           # fonte da verdade (interface abstrata + implementação)
     services/               # acesso a fontes externas
@@ -170,6 +192,7 @@ lib/
       formatting/           # formatação de moeda, números e datas
       l10n/                 # ponte entre idiomas do domínio e Locale do Flutter
       widgets/              # componentes reutilizáveis entre features
+      view_models/          # estado compartilhado entre features (classes base)
     <feature>/
       view_models/
       widgets/              # telas e componentes específicos da feature
@@ -184,7 +207,7 @@ Estado atual (exemplo de referência para novas features):
 lib/
   main.dart, app.dart
   config/dependencies.dart
-  routing/routes.dart, routing/router.dart
+  routing/routes.dart, routing/router.dart   # rotas: /, /settings, /transactions
   domain/models/app_language.dart            # idiomas e regra de escolha
   domain/models/app_theme_mode.dart          # temas que o usuário pode escolher
   domain/models/transaction.dart             # Transaction (sealed): Expense e Income
@@ -197,6 +220,8 @@ lib/
   domain/models/period_summary.dart          # saldo anterior + totais do período
   domain/models/date_range.dart              # intervalo de dias
   domain/models/period_filter.dart           # mês atual, ano atual, últimos 7 dias
+  domain/models/period_overview.dart         # resumo + transações de um período
+  domain/use_cases/get_period_overview_use_case.dart  # contas + receitas + despesas
   data/services/shared_preferences_service.dart
   data/services/sample_data_service.dart     # banco fictício (datas relativas a hoje)
   data/repositories/account/
@@ -208,6 +233,9 @@ lib/
   data/repositories/income/
     income_repository.dart                   # interface abstrata
     income_repository_static.dart            # lê o SampleDataService (provisório)
+  data/repositories/period_filter/
+    period_filter_repository.dart            # filtro escolhido (compartilhado) + Stream
+    period_filter_repository_memory.dart     # só em memória
   data/repositories/settings/
     settings_repository.dart                 # interface abstrata
     settings_repository_local.dart           # implementação
@@ -222,11 +250,15 @@ lib/
     widgets/page_body.dart
     widgets/section_header.dart              # título de seção em listas
     widgets/category_avatar.dart             # ícone das categorias
-  ui/home/view_models/home_view_model.dart
-  ui/home/widgets/home_screen.dart
-  ui/home/widgets/balance_summary_card.dart  # saldo, receitas e despesas
-  ui/home/widgets/transaction_list_tile.dart # uma receita ou despesa na lista
-  ui/home/widgets/period_filter_chips.dart   # seletor de período
+    widgets/balance_summary_card.dart        # saldo, receitas e despesas
+    widgets/transaction_list_tile.dart       # uma receita ou despesa na lista
+    widgets/period_filter_chips.dart         # seletor de período
+    widgets/period_overview_scroll_view.dart # seletor + card + lista (telas de período)
+    view_models/period_view_model.dart       # base das telas de período
+  ui/home/view_models/home_view_model.dart   # até 5 transações
+  ui/home/widgets/home_screen.dart           # + botão "ver todas"
+  ui/transactions/view_models/transactions_view_model.dart
+  ui/transactions/widgets/transactions_screen.dart  # lista completa
   ui/settings/view_models/settings_view_model.dart
   ui/settings/widgets/settings_screen.dart
   l10n/app_*.arb

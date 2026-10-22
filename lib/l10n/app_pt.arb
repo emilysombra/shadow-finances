@@ -161,5 +161,9 @@
         "example": "R$ 1.234,56"
       }
     }
+  },
+  "viewAllTransactions": "Ver todas as transações",
+  "@viewAllTransactions": {
+    "description": "Botão ao fim da lista da tela inicial que abre a tela com todas as transações do período."
   }
 }

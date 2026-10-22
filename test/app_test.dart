@@ -16,6 +16,7 @@ import 'fakes/fake_expense_repository.dart';
 import 'fakes/fake_income_repository.dart';
 import 'fakes/fake_settings_repository.dart';
 import 'fakes/fixed_clock.dart';
+import 'fakes/sample_transactions.dart';
 
 void main() {
   Future<void> pumpApp(
@@ -169,6 +170,80 @@ void main() {
 
     expect(find.text('16/10/2026 – 22/10/2026'), findsOneWidget);
     expect(find.text('Mês passado'), findsNothing);
+  });
+
+  testWidgets('tela inicial mostra 5 transações; botão abre a lista completa', (
+    tester,
+  ) async {
+    await pumpApp(
+      tester,
+      deviceLocales: const [Locale('pt', 'BR')],
+      expenseRepository: FakeExpenseRepository(
+        expenses: [
+          for (var day = 1; day <= 7; day++) testExpense('e$day', day),
+        ],
+      ),
+    );
+    await tester.tap(find.text('Ano atual'));
+    await tester.pumpAndSettle();
+
+    final button = find.text('Ver todas as transações');
+    await tester.scrollUntilVisible(button, 100);
+    for (var day = 7; day >= 3; day--) {
+      expect(find.text('Despesa e$day'), findsOneWidget);
+    }
+    expect(find.text('Despesa e2'), findsNothing);
+    expect(find.text('Despesa e1'), findsNothing);
+
+    await tester.tap(button);
+    await tester.pumpAndSettle();
+
+    // Tela de transações, no mesmo filtro escolhido na tela inicial.
+    expect(find.widgetWithText(AppBar, 'Transações'), findsOneWidget);
+    expect(
+      tester
+          .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Ano atual'))
+          .selected,
+      isTrue,
+    );
+    await tester.scrollUntilVisible(find.text('Despesa e1'), 100);
+    expect(find.text('Despesa e1'), findsOneWidget);
+    expect(find.text('Ver todas as transações'), findsNothing);
+
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(find.text('Shadow Finances'), findsOneWidget);
+  });
+
+  testWidgets('filtro escolhido numa tela vale para todas', (tester) async {
+    await pumpApp(
+      tester,
+      deviceLocales: const [Locale('pt', 'BR')],
+      expenseRepository: FakeExpenseRepository(
+        expenses: [testExpense('recente', 21), testExpense('antiga', 2)],
+      ),
+    );
+    bool selected(String label) => tester
+        .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, label))
+        .selected;
+
+    await tester.scrollUntilVisible(find.text('Ver todas as transações'), 100);
+    await tester.tap(find.text('Ver todas as transações'));
+    await tester.pumpAndSettle();
+    expect(selected('Mês atual'), isTrue);
+
+    // Troca o filtro na tela de transações...
+    await tester.tap(find.text('Últimos 7 dias'));
+    await tester.pumpAndSettle();
+    expect(find.text('Despesa antiga'), findsNothing);
+
+    // ...e a tela inicial, por baixo, já está no mesmo filtro e recarregada.
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(selected('Últimos 7 dias'), isTrue);
+    expect(find.text('16/10/2026 – 22/10/2026'), findsOneWidget);
+    expect(find.text('Despesa recente'), findsOneWidget);
+    expect(find.text('Despesa antiga'), findsNothing);
   });
 
   testWidgets('avisa se os dados não carregarem', (tester) async {

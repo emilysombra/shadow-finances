@@ -7,10 +7,13 @@ import 'package:shadow_finances/data/repositories/expense/expense_repository.dar
 import 'package:shadow_finances/data/repositories/expense/expense_repository_static.dart';
 import 'package:shadow_finances/data/repositories/income/income_repository.dart';
 import 'package:shadow_finances/data/repositories/income/income_repository_static.dart';
+import 'package:shadow_finances/data/repositories/period_filter/period_filter_repository.dart';
+import 'package:shadow_finances/data/repositories/period_filter/period_filter_repository_memory.dart';
 import 'package:shadow_finances/data/repositories/settings/settings_repository.dart';
 import 'package:shadow_finances/data/repositories/settings/settings_repository_local.dart';
 import 'package:shadow_finances/data/services/sample_data_service.dart';
 import 'package:shadow_finances/data/services/shared_preferences_service.dart';
+import 'package:shadow_finances/domain/use_cases/get_period_overview_use_case.dart';
 import 'package:shadow_finances/ui/settings/view_models/settings_view_model.dart';
 import 'package:shadow_finances/utils/clock.dart';
 
@@ -52,6 +55,18 @@ Future<List<SingleChildWidget>> providersFor({
     Provider<AccountRepository>.value(value: accountRepository),
     Provider<IncomeRepository>.value(value: incomeRepository),
     Provider<ExpenseRepository>.value(value: expenseRepository),
+    // Estado compartilhado por todas as telas; só existe em memória, então
+    // não depende de nada externo e os testes usam a implementação real.
+    Provider<PeriodFilterRepository>.value(
+      value: PeriodFilterRepositoryMemory(),
+    ),
+    Provider.value(
+      value: GetPeriodOverviewUseCase(
+        accountRepository: accountRepository,
+        incomeRepository: incomeRepository,
+        expenseRepository: expenseRepository,
+      ),
+    ),
     ChangeNotifierProvider.value(value: settingsViewModel),
   ];
 }

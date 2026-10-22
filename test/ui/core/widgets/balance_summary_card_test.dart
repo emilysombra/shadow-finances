@@ -5,7 +5,7 @@ import 'package:shadow_finances/domain/models/period_summary.dart';
 import 'package:shadow_finances/l10n/app_localizations.dart';
 import 'package:shadow_finances/ui/core/themes/app_theme.dart';
 import 'package:shadow_finances/ui/core/themes/finance_colors.dart';
-import 'package:shadow_finances/ui/home/widgets/balance_summary_card.dart';
+import 'package:shadow_finances/ui/core/widgets/balance_summary_card.dart';
 
 /// O intl separa "R$" do número com um espaço não separável.
 const nbsp = '\u00a0';

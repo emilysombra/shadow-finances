@@ -33,5 +33,6 @@
   "filterCurrentYear": "Año actual",
   "filterLastSevenDays": "Últimos 7 días",
   "periodRange": "{start} – {end}",
-  "summaryPreviousBalance": "Saldo anterior: {amount}"
+  "summaryPreviousBalance": "Saldo anterior: {amount}",
+  "viewAllTransactions": "Ver todas las transacciones"
 }
