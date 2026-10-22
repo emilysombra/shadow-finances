@@ -34,5 +34,8 @@
   "filterLastSevenDays": "Last 7 days",
   "periodRange": "{start} – {end}",
   "summaryPreviousBalance": "Previous balance: {amount}",
-  "viewAllTransactions": "See all transactions"
+  "viewAllTransactions": "See all transactions",
+  "chartsTitle": "Charts",
+  "chartExpensesByCategory": "Spending by category",
+  "chartExpensesByCategoryEmpty": "No spending in this period."
 }

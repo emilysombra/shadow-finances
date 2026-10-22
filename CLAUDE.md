@@ -151,6 +151,11 @@ Regras adicionais:
     é `PeriodSummary.sum`. **Nunca some a lista de transações para exibir
     totais.** `FinancialSummary.of` / `TotalsLedger.of` existem só para criar
     os totais pela primeira vez (migração) e para conferência nos testes.
+  - O `FinancialSummary` também guarda o **total de despesas por categoria**
+    (`expensesByCategory`), mantido pelo mesmo `add` / `remove`. Assim, todo
+    total (por dia, mês, período ou conta) já traz o detalhamento, sem somar
+    transações. Detalhamentos novos (ex.: receitas por categoria) entram do
+    mesmo jeito.
   - **O saldo acumula entre períodos.** `PeriodSummary` traz o saldo anterior
     (tudo antes do início do período, positivo ou negativo) e as receitas e
     despesas do período; o saldo exibido é o anterior mais o do período.
@@ -215,7 +220,7 @@ lib/
   domain/models/income_category.dart         # categorias de receita (inclui saldo inicial)
   domain/models/account.dart                 # conta (id, nome, se é a principal)
   domain/models/account_summary.dart         # conta + resumo do período
-  domain/models/financial_summary.dart       # totais de receitas e despesas, saldo
+  domain/models/financial_summary.dart       # totais, saldo, despesas por categoria
   domain/models/totals_ledger.dart           # totais por dia/mês; resumo de período
   domain/models/period_summary.dart          # saldo anterior + totais do período
   domain/models/date_range.dart              # intervalo de dias
@@ -256,7 +261,9 @@ lib/
     widgets/period_overview_scroll_view.dart # seletor + card + lista (telas de período)
     view_models/period_view_model.dart       # base das telas de período
   ui/home/view_models/home_view_model.dart   # até 5 transações
-  ui/home/widgets/home_screen.dart           # + botão "ver todas"
+  ui/home/widgets/home_screen.dart           # + botão "ver todas" + seção de gráficos
+  ui/home/widgets/chart_card.dart            # moldura comum dos gráficos
+  ui/home/widgets/expenses_by_category_chart.dart  # barras de gasto por categoria
   ui/transactions/view_models/transactions_view_model.dart
   ui/transactions/widgets/transactions_screen.dart  # lista completa
   ui/settings/view_models/settings_view_model.dart
@@ -321,6 +328,27 @@ test/
   (`SliverList.builder` / `ListView.builder`), nunca `children` com todos os itens.
 - Teste telas novas numa largura estreita (320 dp) com fonte em 200%
   (`MediaQueryData(textScaler: TextScaler.linear(2))`): nada pode transbordar.
+
+### Gráficos
+
+- Antes de criar ou mudar um gráfico, carregue a skill `dataviz` e siga o
+  procedimento dela (formato antes da cor, especificação das marcas,
+  anti-padrões, olhar o resultado renderizado).
+- Gráficos ficam na seção "Gráficos" da tela inicial, abaixo das transações,
+  cada um num `ChartCard` (título + gráfico). Gráfico novo = outro
+  `ChartCard` nessa seção.
+- Os dados dos gráficos vêm dos **totais guardados** (o `PeriodSummary` do
+  período), nunca da soma das transações, e acompanham o filtro de período
+  automaticamente.
+- Sem biblioteca de gráficos por enquanto: barras são widgets do Flutter
+  (texto de verdade, que cresce com a fonte e é lido pelo leitor de tela).
+  Se um gráfico pedir uma biblioteca, discuta antes e confira a licença
+  (ver [Código aberto e segurança](#código-aberto-e-segurança)).
+- Comparação entre categorias = **barras horizontais ordenadas, numa cor
+  só**, com nome, valor e porcentagem escritos em cada linha; nada de
+  pizza/rosca para comparar valores. Textos usam as cores de texto do tema;
+  só a barra usa a cor do dado. Porcentagens via `BrFormat.percent` (nunca
+  `0%` para um valor positivo).
 
 ## Internacionalização (i18n)
 

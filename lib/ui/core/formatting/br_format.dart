@@ -12,6 +12,7 @@ abstract final class BrFormat {
 
   static final _currency = NumberFormat.currency(locale: locale, symbol: r'R$');
   static final _number = NumberFormat.decimalPattern(locale);
+  static final _percent = NumberFormat.percentPattern(locale);
   static final _date = DateFormat('dd/MM/yyyy', locale);
   static final _time = DateFormat('HH:mm', locale);
 
@@ -25,6 +26,13 @@ abstract final class BrFormat {
 
   /// Número com separadores brasileiros: `1234.5` → `1.234,5`.
   static String number(num value) => _number.format(value);
+
+  /// Porcentagem arredondada a partir de uma fração: `0.574` → `57%`.
+  /// Frações positivas abaixo de 1% viram `<1%`, para nunca mostrar `0%` ao
+  /// lado de um valor que existe.
+  static String percent(double fraction) => fraction > 0 && fraction < 0.005
+      ? '<${_percent.format(0.01)}'
+      : _percent.format(fraction);
 
   /// Data numérica: `21/10/2026`.
   static String date(DateTime value) => _date.format(value);

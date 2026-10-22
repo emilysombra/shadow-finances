@@ -13,8 +13,8 @@ import 'package:shadow_finances/ui/core/widgets/section_header.dart';
 import 'package:shadow_finances/ui/core/widgets/transaction_list_tile.dart';
 
 /// Conteúdo rolável de uma tela de período: seletor de período e intervalo,
-/// card de resumo (ou carregamento / erro), lista de transações e um rodapé
-/// opcional. Usado pela tela inicial e pela tela de transações.
+/// card de resumo (ou carregamento / erro), lista de transações e conteúdo
+/// extra opcional depois da lista. Usado pela tela inicial e pela tela de transações.
 ///
 /// Recebe tudo por parâmetro: só a tela conhece o ViewModel.
 class PeriodOverviewScrollView extends StatelessWidget {
@@ -27,7 +27,7 @@ class PeriodOverviewScrollView extends StatelessWidget {
     required this.transactions,
     required this.onFilterSelected,
     this.listTitle,
-    this.footer,
+    this.footerSlivers = const [],
   });
 
   final PeriodFilter filter;
@@ -42,8 +42,9 @@ class PeriodOverviewScrollView extends StatelessWidget {
   /// Cabeçalho da lista; sem ele, a lista começa logo após o card.
   final String? listTitle;
 
-  /// Mostrado ao fim da lista, quando os dados carregaram.
-  final Widget? footer;
+  /// Slivers mostrados depois da lista, quando os dados carregaram (ex.:
+  /// botão "ver todas" e gráficos da tela inicial).
+  final List<Widget> footerSlivers;
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +53,6 @@ class PeriodOverviewScrollView extends StatelessWidget {
     final spacing = AppSpacing.of(context);
     final summary = this.summary;
     final listTitle = this.listTitle;
-    final footer = this.footer;
 
     // CustomScrollView + SliverList.builder: só os itens visíveis da lista
     // são construídos, o que mantém a tela leve com muitas transações.
@@ -109,11 +109,7 @@ class PeriodOverviewScrollView extends StatelessWidget {
                 transaction: transactions[index],
               ),
             ),
-          if (footer != null)
-            SliverPadding(
-              padding: EdgeInsets.all(spacing.md),
-              sliver: SliverToBoxAdapter(child: footer),
-            ),
+          ...footerSlivers,
         ],
       ],
     );

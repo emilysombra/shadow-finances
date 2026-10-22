@@ -165,5 +165,17 @@
   "viewAllTransactions": "Ver todas as transações",
   "@viewAllTransactions": {
     "description": "Botão ao fim da lista da tela inicial que abre a tela com todas as transações do período."
+  },
+  "chartsTitle": "Gráficos",
+  "@chartsTitle": {
+    "description": "Cabeçalho da seção de gráficos da tela inicial."
+  },
+  "chartExpensesByCategory": "Gastos por categoria",
+  "@chartExpensesByCategory": {
+    "description": "Título do gráfico de barras com o total gasto em cada categoria no período escolhido."
+  },
+  "chartExpensesByCategoryEmpty": "Nenhum gasto neste período.",
+  "@chartExpensesByCategoryEmpty": {
+    "description": "Mensagem no lugar do gráfico de gastos por categoria quando o período não tem despesas."
   }
 }

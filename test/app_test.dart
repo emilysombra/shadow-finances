@@ -9,7 +9,10 @@ import 'package:shadow_finances/domain/models/app_theme_mode.dart';
 import 'package:shadow_finances/domain/models/expense_category.dart';
 import 'package:shadow_finances/domain/models/financial_summary.dart';
 import 'package:shadow_finances/domain/models/period_summary.dart';
+import 'package:shadow_finances/domain/models/date_range.dart';
+import 'package:shadow_finances/domain/models/totals_ledger.dart';
 import 'package:shadow_finances/domain/models/transaction.dart';
+import 'package:shadow_finances/utils/result.dart';
 
 import 'fakes/fake_account_repository.dart';
 import 'fakes/fake_expense_repository.dart';
@@ -240,10 +243,35 @@ void main() {
     // ...e a tela inicial, por baixo, já está no mesmo filtro e recarregada.
     await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
+    // A tela inicial ficou rolada até o botão; volta ao topo.
+    await tester.scrollUntilVisible(find.text('Últimos 7 dias'), -100);
     expect(selected('Últimos 7 dias'), isTrue);
     expect(find.text('16/10/2026 – 22/10/2026'), findsOneWidget);
     expect(find.text('Despesa recente'), findsOneWidget);
     expect(find.text('Despesa antiga'), findsNothing);
+  });
+
+  testWidgets('gráfico de gastos por categoria segue o filtro', (tester) async {
+    await pumpApp(
+      tester,
+      deviceLocales: const [Locale('pt', 'BR')],
+      accountRepository: _AccountsFromLedger(
+        expenses: [testExpense('mes', 20), testExpense('setembro', -10)],
+      ),
+    );
+
+    final chart = find.text('Gastos por categoria');
+    await tester.scrollUntilVisible(chart, 100);
+    expect(find.text('Gráficos'), findsOneWidget);
+    // Só a despesa de outubro (R$ 1,00), 100% do mês.
+    expect(find.text('R\$\u00a01,00  100%'), findsOneWidget);
+
+    await tester.scrollUntilVisible(find.text('Ano atual'), -100);
+    await tester.tap(find.text('Ano atual'));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(chart, 100);
+    // Outubro + setembro.
+    expect(find.text('R\$\u00a02,00  100%'), findsOneWidget);
   });
 
   testWidgets('avisa se os dados não carregarem', (tester) async {
@@ -367,4 +395,23 @@ void main() {
       ThemeMode.light,
     );
   });
+}
+
+/// Conta de teste cujos totais vêm de um livro-razão montado com
+/// [expenses], como faria um Repository de verdade.
+class _AccountsFromLedger extends FakeAccountRepository {
+  _AccountsFromLedger({required List<Transaction> expenses})
+    : _ledger = TotalsLedger.of(expenses);
+
+  final TotalsLedger _ledger;
+
+  @override
+  Future<Result<List<AccountSummary>>> getAccountSummaries(
+    DateRange range,
+  ) async => Result.ok([
+    AccountSummary(
+      account: FakeAccountRepository.account,
+      summary: _ledger.summarize(range),
+    ),
+  ]);
 }

@@ -3,11 +3,15 @@ import 'package:flutter/material.dart';
 import 'package:shadow_finances/l10n/app_localizations.dart';
 import 'package:shadow_finances/routing/routes.dart';
 import 'package:shadow_finances/ui/core/widgets/page_body.dart';
+import 'package:shadow_finances/ui/core/themes/app_spacing.dart';
 import 'package:shadow_finances/ui/core/widgets/period_overview_scroll_view.dart';
+import 'package:shadow_finances/ui/core/widgets/section_header.dart';
 import 'package:shadow_finances/ui/home/view_models/home_view_model.dart';
+import 'package:shadow_finances/ui/home/widgets/chart_card.dart';
+import 'package:shadow_finances/ui/home/widgets/expenses_by_category_chart.dart';
 
-/// Tela inicial: seletor de período, resumo e as transações mais recentes,
-/// com um botão para a lista completa.
+/// Tela inicial: seletor de período, resumo, as transações mais recentes
+/// (com um botão para a lista completa) e os gráficos do período.
 class HomeScreen extends StatelessWidget {
   const HomeScreen({
     super.key,
@@ -21,6 +25,7 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final spacing = AppSpacing.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -44,16 +49,42 @@ class HomeScreen extends StatelessWidget {
             transactions: viewModel.recentTransactions,
             onFilterSelected: viewModel.selectFilter,
             listTitle: l10n.transactionsTitle,
-            footer: Center(
-              child: FilledButton.tonalIcon(
-                // O filtro é compartilhado: a tela completa já abre nele.
-                onPressed: () =>
-                    Navigator.of(context).pushNamed(Routes.transactions),
-                icon: const Icon(Icons.arrow_forward),
-                iconAlignment: IconAlignment.end,
-                label: Text(l10n.viewAllTransactions),
+            footerSlivers: [
+              SliverPadding(
+                padding: EdgeInsets.all(spacing.md),
+                sliver: SliverToBoxAdapter(
+                  child: Center(
+                    child: FilledButton.tonalIcon(
+                      // O filtro é compartilhado: a tela completa já abre
+                      // nele.
+                      onPressed: () =>
+                          Navigator.of(context).pushNamed(Routes.transactions),
+                      icon: const Icon(Icons.arrow_forward),
+                      iconAlignment: IconAlignment.end,
+                      label: Text(l10n.viewAllTransactions),
+                    ),
+                  ),
+                ),
               ),
-            ),
+              SliverToBoxAdapter(child: SectionHeader(title: l10n.chartsTitle)),
+              // Cada gráfico é um ChartCard; gráficos novos entram aqui.
+              SliverPadding(
+                padding: EdgeInsets.fromLTRB(
+                  spacing.md,
+                  0,
+                  spacing.md,
+                  spacing.md,
+                ),
+                sliver: SliverToBoxAdapter(
+                  child: ChartCard(
+                    title: l10n.chartExpensesByCategory,
+                    child: ExpensesByCategoryChart(
+                      expenses: viewModel.expensesByCategory,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

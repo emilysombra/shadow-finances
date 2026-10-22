@@ -27,10 +27,17 @@ void main() {
     category: ExpenseCategory.other,
   );
 
+  // Todas as despesas deste teste são da categoria "other".
   PeriodSummary summary(int previous, int income, int expenses) =>
       PeriodSummary(
         previousBalanceCents: previous,
-        totals: FinancialSummary(incomeCents: income, expensesCents: expenses),
+        totals: FinancialSummary(
+          incomeCents: income,
+          expensesCents: expenses,
+          expensesByCategory: {
+            if (expenses > 0) ExpenseCategory.other: expenses,
+          },
+        ),
       );
 
   // Agosto positivo (+500), setembro negativo (-900), outubro com

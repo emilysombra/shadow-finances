@@ -21,6 +21,14 @@ void main() {
     expect(BrFormat.signedCurrency(0), 'R\$${nbsp}0,00');
   });
 
+  test('porcentagem arredondada', () {
+    expect(BrFormat.percent(0.574), '57%');
+    expect(BrFormat.percent(1), '100%');
+    expect(BrFormat.percent(0.005), '1%');
+    expect(BrFormat.percent(0.0049), '<1%', reason: 'nunca 0% para algo > 0');
+    expect(BrFormat.percent(0), '0%');
+  });
+
   test('números com vírgula decimal e ponto de milhar', () {
     expect(BrFormat.number(1234567.5), '1.234.567,5');
   });
