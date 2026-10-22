@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 
 import 'package:shadow_finances/l10n/app_localizations.dart';
 import 'package:shadow_finances/routing/routes.dart';
+import 'package:shadow_finances/ui/core/formatting/br_format.dart';
 import 'package:shadow_finances/ui/core/themes/app_spacing.dart';
 import 'package:shadow_finances/ui/core/widgets/page_body.dart';
 import 'package:shadow_finances/ui/core/widgets/section_header.dart';
 import 'package:shadow_finances/ui/home/view_models/home_view_model.dart';
 import 'package:shadow_finances/ui/home/widgets/balance_summary_card.dart';
+import 'package:shadow_finances/ui/home/widgets/period_filter_chips.dart';
 import 'package:shadow_finances/ui/home/widgets/transaction_list_tile.dart';
 
-/// Tela inicial: resumo financeiro no topo e, abaixo, as transações.
+/// Tela inicial: seletor de período, resumo do período e as transações dele.
 class HomeScreen extends StatelessWidget {
   const HomeScreen({
     super.key,
@@ -38,13 +40,7 @@ class HomeScreen extends StatelessWidget {
       body: PageBody(
         child: ListenableBuilder(
           listenable: viewModel,
-          builder: (context, _) {
-            if (viewModel.summary != null) return _content(context);
-            if (viewModel.hasError) {
-              return _Message(text: l10n.homeLoadError);
-            }
-            return const Center(child: CircularProgressIndicator());
-          },
+          builder: (context, _) => _content(context),
         ),
       ),
     );
@@ -52,32 +48,69 @@ class HomeScreen extends StatelessWidget {
 
   Widget _content(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
     final spacing = AppSpacing.of(context);
+    final range = viewModel.range;
+    final summary = viewModel.summary;
     final transactions = viewModel.transactions;
 
     // CustomScrollView + SliverList.builder: só os itens visíveis da lista
     // são construídos, o que mantém a tela leve com muitas transações.
     return CustomScrollView(
       slivers: [
+        // Seletor de período sempre visível, mesmo com erro, para o usuário
+        // poder trocar de período.
+        SliverPadding(
+          padding: EdgeInsets.fromLTRB(spacing.md, spacing.md, spacing.md, 0),
+          sliver: SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                PeriodFilterChips(
+                  selected: viewModel.filter,
+                  onSelected: viewModel.selectFilter,
+                ),
+                SizedBox(height: spacing.sm),
+                Text(
+                  l10n.periodRange(
+                    BrFormat.date(range.start),
+                    BrFormat.date(range.end),
+                  ),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
         SliverPadding(
           padding: EdgeInsets.all(spacing.md),
           sliver: SliverToBoxAdapter(
-            child: BalanceSummaryCard(summary: viewModel.summary!),
+            child: summary != null
+                ? BalanceSummaryCard(summary: summary)
+                : viewModel.hasError
+                ? _Message(text: l10n.homeLoadError)
+                : const Center(child: CircularProgressIndicator()),
           ),
         ),
-        SliverToBoxAdapter(child: SectionHeader(title: l10n.transactionsTitle)),
-        if (transactions.isEmpty)
-          SliverToBoxAdapter(child: _Message(text: l10n.transactionsEmpty))
-        else
-          SliverList.builder(
-            itemCount: transactions.length,
-            // A chave é a transação inteira, não só o id: receitas e
-            // despesas podem ter ids iguais entre si.
-            itemBuilder: (context, index) => TransactionListTile(
-              key: ValueKey(transactions[index]),
-              transaction: transactions[index],
-            ),
+        if (summary != null) ...[
+          SliverToBoxAdapter(
+            child: SectionHeader(title: l10n.transactionsTitle),
           ),
+          if (transactions.isEmpty)
+            SliverToBoxAdapter(child: _Message(text: l10n.transactionsEmpty))
+          else
+            SliverList.builder(
+              itemCount: transactions.length,
+              // A chave é a transação inteira, não só o id: receitas e
+              // despesas podem ter ids iguais entre si.
+              itemBuilder: (context, index) => TransactionListTile(
+                key: ValueKey(transactions[index]),
+                transaction: transactions[index],
+              ),
+            ),
+        ],
       ],
     );
   }

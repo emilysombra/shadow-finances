@@ -12,7 +12,7 @@
   "summaryExpenses": "Expenses",
   "homeLoadError": "Couldn't load your finances.",
   "transactionsTitle": "Transactions",
-  "transactionsEmpty": "No transactions yet.",
+  "transactionsEmpty": "No transactions in this period.",
   "expenseCategoryFood": "Food",
   "expenseCategoryTransport": "Transportation",
   "expenseCategoryHousing": "Housing",
@@ -28,5 +28,10 @@
   "incomeCategoryGift": "Gift",
   "incomeCategoryRefund": "Refund",
   "incomeCategoryInitialBalance": "Opening balance",
-  "incomeCategoryOther": "Other"
+  "incomeCategoryOther": "Other",
+  "filterCurrentMonth": "This month",
+  "filterCurrentYear": "This year",
+  "filterLastSevenDays": "Last 7 days",
+  "periodRange": "{start} – {end}",
+  "summaryPreviousBalance": "Previous balance: {amount}"
 }

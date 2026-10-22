@@ -48,7 +48,7 @@
   "@transactionsTitle": {
     "description": "Cabeçalho da lista de transações na tela inicial."
   },
-  "transactionsEmpty": "Nenhuma transação registrada.",
+  "transactionsEmpty": "Nenhuma transação neste período.",
   "@transactionsEmpty": {
     "description": "Mensagem exibida no lugar da lista de transações quando ela está vazia."
   },
@@ -125,5 +125,41 @@
   "incomeCategoryOther": "Outros",
   "@incomeCategoryOther": {
     "description": "Categoria de receita: qualquer outra."
+  },
+  "filterCurrentMonth": "Mês atual",
+  "@filterCurrentMonth": {
+    "description": "Filtro de período da tela inicial: o mês corrente inteiro."
+  },
+  "filterCurrentYear": "Ano atual",
+  "@filterCurrentYear": {
+    "description": "Filtro de período da tela inicial: o ano corrente inteiro."
+  },
+  "filterLastSevenDays": "Últimos 7 dias",
+  "@filterLastSevenDays": {
+    "description": "Filtro de período da tela inicial: hoje e os seis dias anteriores."
+  },
+  "periodRange": "{start} – {end}",
+  "@periodRange": {
+    "description": "Intervalo de datas do período escolhido na tela inicial (datas já formatadas).",
+    "placeholders": {
+      "start": {
+        "type": "String",
+        "example": "01/10/2026"
+      },
+      "end": {
+        "type": "String",
+        "example": "31/10/2026"
+      }
+    }
+  },
+  "summaryPreviousBalance": "Saldo anterior: {amount}",
+  "@summaryPreviousBalance": {
+    "description": "Linha do card da tela inicial com o saldo acumulado antes do período escolhido (valor já formatado, pode ser negativo).",
+    "placeholders": {
+      "amount": {
+        "type": "String",
+        "example": "R$ 1.234,56"
+      }
+    }
   }
 }

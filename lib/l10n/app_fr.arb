@@ -12,7 +12,7 @@
   "summaryExpenses": "Dépenses",
   "homeLoadError": "Impossible de charger vos finances.",
   "transactionsTitle": "Transactions",
-  "transactionsEmpty": "Aucune transaction enregistrée.",
+  "transactionsEmpty": "Aucune transaction sur cette période.",
   "expenseCategoryFood": "Alimentation",
   "expenseCategoryTransport": "Transport",
   "expenseCategoryHousing": "Logement",
@@ -28,5 +28,10 @@
   "incomeCategoryGift": "Cadeau",
   "incomeCategoryRefund": "Remboursement",
   "incomeCategoryInitialBalance": "Solde initial",
-  "incomeCategoryOther": "Autres"
+  "incomeCategoryOther": "Autres",
+  "filterCurrentMonth": "Mois en cours",
+  "filterCurrentYear": "Année en cours",
+  "filterLastSevenDays": "7 derniers jours",
+  "periodRange": "{start} – {end}",
+  "summaryPreviousBalance": "Solde précédent : {amount}"
 }

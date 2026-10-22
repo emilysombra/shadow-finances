@@ -4,16 +4,18 @@ import 'package:provider/provider.dart';
 import 'package:shadow_finances/app.dart';
 import 'package:shadow_finances/config/dependencies.dart';
 import 'package:shadow_finances/domain/models/app_language.dart';
-import 'package:shadow_finances/domain/models/account_balance.dart';
+import 'package:shadow_finances/domain/models/account_summary.dart';
 import 'package:shadow_finances/domain/models/app_theme_mode.dart';
 import 'package:shadow_finances/domain/models/expense_category.dart';
 import 'package:shadow_finances/domain/models/financial_summary.dart';
+import 'package:shadow_finances/domain/models/period_summary.dart';
 import 'package:shadow_finances/domain/models/transaction.dart';
 
 import 'fakes/fake_account_repository.dart';
 import 'fakes/fake_expense_repository.dart';
 import 'fakes/fake_income_repository.dart';
 import 'fakes/fake_settings_repository.dart';
+import 'fakes/fixed_clock.dart';
 
 void main() {
   Future<void> pumpApp(
@@ -28,6 +30,7 @@ void main() {
     addTearDown(tester.platformDispatcher.clearLocalesTestValue);
 
     final providers = await providersFor(
+      clock: FixedClock(DateTime(2026, 10, 22)),
       settingsRepository: repository ?? FakeSettingsRepository(),
       accountRepository: accountRepository ?? FakeAccountRepository(),
       incomeRepository: incomeRepository ?? FakeIncomeRepository(),
@@ -55,10 +58,16 @@ void main() {
         tester,
         deviceLocales: const [Locale('pt', 'BR')],
         accountRepository: FakeAccountRepository(
-          balances: [
-            const AccountBalance(
+          summaries: [
+            const AccountSummary(
               account: FakeAccountRepository.account,
-              totals: FinancialSummary(incomeCents: 10000, expensesCents: 2500),
+              summary: PeriodSummary(
+                previousBalanceCents: 0,
+                totals: FinancialSummary(
+                  incomeCents: 10000,
+                  expensesCents: 2500,
+                ),
+              ),
             ),
           ],
         ),
@@ -102,15 +111,64 @@ void main() {
       expect(find.text('Alimentação · 21/10/2026'), findsOneWidget);
       expect(find.text('-${brl('15,00')}'), findsOneWidget);
       expect(find.text('Ônibus'), findsOneWidget);
+
+      // A lista só constrói as linhas visíveis: rola até a última.
+      await tester.scrollUntilVisible(find.text('Saldo inicial'), 100);
       expect(find.text('Saldo inicial'), findsOneWidget);
       expect(find.text('+${brl('100,00')}'), findsOneWidget);
     },
   );
 
-  testWidgets('sem despesas, avisa que a lista está vazia', (tester) async {
+  testWidgets('sem transações no período, avisa que a lista está vazia', (
+    tester,
+  ) async {
     await pumpApp(tester, deviceLocales: const [Locale('pt', 'BR')]);
 
-    expect(find.text('Nenhuma transação registrada.'), findsOneWidget);
+    expect(find.text('Nenhuma transação neste período.'), findsOneWidget);
+  });
+
+  testWidgets('filtros: começa no mês atual e trocar muda a tela inteira', (
+    tester,
+  ) async {
+    final accountRepository = FakeAccountRepository();
+    await pumpApp(
+      tester,
+      deviceLocales: const [Locale('pt', 'BR')],
+      accountRepository: accountRepository,
+      expenseRepository: FakeExpenseRepository(
+        expenses: [
+          Expense(
+            id: '1',
+            description: 'Mês passado',
+            amountCents: 1000,
+            date: DateTime(2026, 9, 10),
+            accountId: FakeAccountRepository.account.id,
+            category: ExpenseCategory.other,
+          ),
+        ],
+      ),
+    );
+
+    expect(find.text('01/10/2026 – 31/10/2026'), findsOneWidget);
+    expect(find.text('Mês passado'), findsNothing);
+
+    await tester.tap(find.text('Ano atual'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('01/01/2026 – 31/12/2026'), findsOneWidget);
+    expect(find.text('Mês passado'), findsOneWidget);
+    expect(
+      tester
+          .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Ano atual'))
+          .selected,
+      isTrue,
+    );
+
+    await tester.tap(find.text('Últimos 7 dias'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('16/10/2026 – 22/10/2026'), findsOneWidget);
+    expect(find.text('Mês passado'), findsNothing);
   });
 
   testWidgets('avisa se os dados não carregarem', (tester) async {
@@ -125,6 +183,11 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Saldo'), findsNothing);
+    expect(
+      find.text('Ano atual'),
+      findsOneWidget,
+      reason: 'o seletor continua visível para trocar de período',
+    );
   });
 
   testWidgets('segue o idioma do dispositivo', (tester) async {

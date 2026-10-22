@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 
-import 'package:shadow_finances/domain/models/financial_summary.dart';
+import 'package:shadow_finances/domain/models/period_summary.dart';
 import 'package:shadow_finances/l10n/app_localizations.dart';
 import 'package:shadow_finances/ui/core/formatting/br_format.dart';
 import 'package:shadow_finances/ui/core/themes/app_spacing.dart';
 import 'package:shadow_finances/ui/core/themes/finance_colors.dart';
 
-/// Card com o saldo em destaque e, abaixo, os totais de receitas e despesas.
+/// Card com o saldo acumulado em destaque, o saldo que veio do período
+/// anterior e, abaixo, as receitas e despesas do período.
 class BalanceSummaryCard extends StatelessWidget {
   const BalanceSummaryCard({super.key, required this.summary});
 
-  final FinancialSummary summary;
+  final PeriodSummary summary;
 
   @override
   Widget build(BuildContext context) {
@@ -48,6 +49,15 @@ class BalanceSummaryCard extends StatelessWidget {
                           : theme.colorScheme.onSurface,
                     ),
                   ),
+                  SizedBox(height: spacing.xs),
+                  Text(
+                    l10n.summaryPreviousBalance(
+                      BrFormat.currency(summary.previousBalanceCents),
+                    ),
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -59,7 +69,7 @@ class BalanceSummaryCard extends StatelessWidget {
                   child: _SummaryEntry(
                     icon: Icons.arrow_upward,
                     label: l10n.summaryIncome,
-                    cents: summary.incomeCents,
+                    cents: summary.totals.incomeCents,
                     containerColor: financeColors.incomeContainer,
                     onContainerColor: financeColors.onIncomeContainer,
                   ),
@@ -69,7 +79,7 @@ class BalanceSummaryCard extends StatelessWidget {
                   child: _SummaryEntry(
                     icon: Icons.arrow_downward,
                     label: l10n.summaryExpenses,
-                    cents: summary.expensesCents,
+                    cents: summary.totals.expensesCents,
                     containerColor: financeColors.expenseContainer,
                     onContainerColor: financeColors.onExpenseContainer,
                   ),

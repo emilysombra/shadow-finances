@@ -12,7 +12,7 @@
   "summaryExpenses": "Gastos",
   "homeLoadError": "No se pudieron cargar tus finanzas.",
   "transactionsTitle": "Transacciones",
-  "transactionsEmpty": "No hay transacciones registradas.",
+  "transactionsEmpty": "No hay transacciones en este período.",
   "expenseCategoryFood": "Alimentación",
   "expenseCategoryTransport": "Transporte",
   "expenseCategoryHousing": "Vivienda",
@@ -28,5 +28,10 @@
   "incomeCategoryGift": "Regalo",
   "incomeCategoryRefund": "Reembolso",
   "incomeCategoryInitialBalance": "Saldo inicial",
-  "incomeCategoryOther": "Otros"
+  "incomeCategoryOther": "Otros",
+  "filterCurrentMonth": "Mes actual",
+  "filterCurrentYear": "Año actual",
+  "filterLastSevenDays": "Últimos 7 días",
+  "periodRange": "{start} – {end}",
+  "summaryPreviousBalance": "Saldo anterior: {amount}"
 }

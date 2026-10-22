@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shadow_finances/domain/models/financial_summary.dart';
+import 'package:shadow_finances/domain/models/period_summary.dart';
 import 'package:shadow_finances/l10n/app_localizations.dart';
 import 'package:shadow_finances/ui/core/themes/app_theme.dart';
 import 'package:shadow_finances/ui/core/themes/finance_colors.dart';
@@ -12,7 +13,7 @@ const nbsp = '\u00a0';
 void main() {
   Future<void> pumpCard(
     WidgetTester tester,
-    FinancialSummary summary, {
+    PeriodSummary summary, {
     ThemeData? theme,
   }) {
     return tester.pumpWidget(
@@ -32,7 +33,10 @@ void main() {
   testWidgets('mostra saldo, receitas e despesas formatados', (tester) async {
     await pumpCard(
       tester,
-      const FinancialSummary(incomeCents: 850000, expensesCents: 523490),
+      const PeriodSummary(
+        previousBalanceCents: 0,
+        totals: FinancialSummary(incomeCents: 850000, expensesCents: 523490),
+      ),
     );
 
     expect(find.text('Saldo'), findsOneWidget);
@@ -46,7 +50,10 @@ void main() {
   testWidgets('saldo negativo usa a cor de despesa', (tester) async {
     await pumpCard(
       tester,
-      const FinancialSummary(incomeCents: 1000, expensesCents: 1500),
+      const PeriodSummary(
+        previousBalanceCents: 0,
+        totals: FinancialSummary(incomeCents: 1000, expensesCents: 1500),
+      ),
     );
 
     expect(
@@ -58,7 +65,10 @@ void main() {
   testWidgets('funciona no tema escuro', (tester) async {
     await pumpCard(
       tester,
-      const FinancialSummary(incomeCents: 1000, expensesCents: 1500),
+      const PeriodSummary(
+        previousBalanceCents: 0,
+        totals: FinancialSummary(incomeCents: 1000, expensesCents: 1500),
+      ),
       theme: AppTheme.dark,
     );
 
@@ -66,5 +76,21 @@ void main() {
       colorOf(tester, '-R\$${nbsp}5,00'),
       AppTheme.dark.extension<FinanceColors>()!.expense,
     );
+  });
+
+  testWidgets('saldo acumula o saldo anterior, que aparece no card', (
+    tester,
+  ) async {
+    await pumpCard(
+      tester,
+      const PeriodSummary(
+        previousBalanceCents: -20000,
+        totals: FinancialSummary(incomeCents: 50000, expensesCents: 10000),
+      ),
+    );
+
+    expect(find.text('R\$${nbsp}200,00'), findsOneWidget, reason: 'saldo');
+    expect(find.text('Saldo anterior: -R\$${nbsp}200,00'), findsOneWidget);
+    expect(find.text('R\$${nbsp}500,00'), findsOneWidget, reason: 'receitas');
   });
 }

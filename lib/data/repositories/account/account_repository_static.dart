@@ -1,32 +1,33 @@
 import 'package:shadow_finances/data/repositories/account/account_repository.dart';
+import 'package:shadow_finances/data/services/sample_data_service.dart';
 import 'package:shadow_finances/domain/models/account.dart';
-import 'package:shadow_finances/domain/models/account_balance.dart';
-import 'package:shadow_finances/domain/models/financial_summary.dart';
+import 'package:shadow_finances/domain/models/account_summary.dart';
+import 'package:shadow_finances/domain/models/date_range.dart';
+import 'package:shadow_finances/domain/models/period_summary.dart';
 import 'package:shadow_finances/utils/result.dart';
 
-/// [AccountRepository] provisório com a única conta do usuário, enquanto o
-/// app ainda não salva contas.
+/// [AccountRepository] provisório sobre os dados fictícios do
+/// [SampleDataService].
 class AccountRepositoryStatic implements AccountRepository {
-  // Dado fictício; o nome é dado do usuário, por isso não é traduzido.
-  static const mainAccount = Account(
-    id: 'main',
-    name: 'Conta principal',
-    isMain: true,
-  );
+  AccountRepositoryStatic({required this._sampleData});
 
-  /// Totais guardados, como estariam numa coluna do banco de dados. Batem
-  /// com as transações fictícias de IncomeRepositoryStatic e
-  /// ExpenseRepositoryStatic (conferido nos testes).
-  static const mainAccountBalance = AccountBalance(
-    account: mainAccount,
-    totals: FinancialSummary(incomeCents: 954590, expensesCents: 313760),
-  );
+  final SampleDataService _sampleData;
 
   @override
-  Future<Result<List<AccountBalance>>> getAccountBalances() async =>
-      const Result.ok([mainAccountBalance]);
+  Future<Result<List<AccountSummary>>> getAccountSummaries(
+    DateRange range,
+  ) async {
+    final ledgers = _sampleData.ledgers;
+    return Result.ok([
+      for (final account in _sampleData.accounts)
+        AccountSummary(
+          account: account,
+          summary: ledgers[account.id]?.summarize(range) ?? PeriodSummary.zero,
+        ),
+    ]);
+  }
 
   @override
   Future<Result<Account>> getMainAccount() async =>
-      const Result.ok(mainAccount);
+      Result.ok(_sampleData.accounts.firstWhere((account) => account.isMain));
 }

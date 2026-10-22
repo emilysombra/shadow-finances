@@ -18,6 +18,7 @@ Route<void> onGenerateRoute(
       _ => HomeScreen(
         appTitle: appTitle,
         viewModel: HomeViewModel(
+          clock: context.read(),
           accountRepository: context.read(),
           incomeRepository: context.read(),
           expenseRepository: context.read(),

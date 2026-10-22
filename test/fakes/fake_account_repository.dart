@@ -1,21 +1,19 @@
+import 'dart:async';
+
 import 'package:shadow_finances/data/repositories/account/account_repository.dart';
 import 'package:shadow_finances/domain/models/account.dart';
-import 'package:shadow_finances/domain/models/account_balance.dart';
-import 'package:shadow_finances/domain/models/financial_summary.dart';
+import 'package:shadow_finances/domain/models/account_summary.dart';
+import 'package:shadow_finances/domain/models/date_range.dart';
+import 'package:shadow_finances/domain/models/period_summary.dart';
 import 'package:shadow_finances/utils/result.dart';
 
-/// [AccountRepository] em memória para testes. Os totais de cada conta são
-/// os passados em [balances], sem conferir com transação alguma.
+/// [AccountRepository] em memória para testes. Devolve [summaries] para
+/// qualquer período, sem conferir com transação alguma.
 class FakeAccountRepository implements AccountRepository {
-  FakeAccountRepository({List<AccountBalance>? balances})
-    : balances =
-          balances ??
-          [
-            const AccountBalance(
-              account: account,
-              totals: FinancialSummary.zero,
-            ),
-          ];
+  FakeAccountRepository({List<AccountSummary>? summaries})
+    : summaries =
+          summaries ??
+          [const AccountSummary(account: account, summary: PeriodSummary.zero)];
 
   /// Conta principal usada por padrão nos testes.
   static const account = Account(
@@ -24,22 +22,40 @@ class FakeAccountRepository implements AccountRepository {
     isMain: true,
   );
 
-  List<AccountBalance> balances;
+  List<AccountSummary> summaries;
 
   /// Quando `true`, todas as operações falham.
   bool shouldFail = false;
 
+  /// Períodos pedidos, em ordem.
+  final requestedRanges = <DateRange>[];
+
+  /// Quando `true`, cada resposta de [getAccountSummaries] espera até o teste
+  /// completar o [Completer] correspondente em [pending].
+  bool holdResponses = false;
+  final pending = <Completer<void>>[];
+
   @override
-  Future<Result<List<AccountBalance>>> getAccountBalances() async {
-    if (shouldFail) return Result.failure(Exception('falha simulada'));
-    return Result.ok(balances);
+  Future<Result<List<AccountSummary>>> getAccountSummaries(
+    DateRange range,
+  ) async {
+    requestedRanges.add(range);
+    final answer = shouldFail
+        ? Result<List<AccountSummary>>.failure(Exception('falha simulada'))
+        : Result.ok(summaries);
+    if (holdResponses) {
+      final gate = Completer<void>();
+      pending.add(gate);
+      await gate.future;
+    }
+    return answer;
   }
 
   @override
   Future<Result<Account>> getMainAccount() async {
     if (shouldFail) return Result.failure(Exception('falha simulada'));
     return Result.ok(
-      balances.map((b) => b.account).firstWhere((a) => a.isMain),
+      summaries.map((s) => s.account).firstWhere((a) => a.isMain),
     );
   }
 }

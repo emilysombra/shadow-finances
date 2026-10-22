@@ -91,9 +91,17 @@ Regras adicionais:
   receitas e despesas); se essa combinação passar a ser usada por outro
   ViewModel, extraia-a para um caso de uso.
 - Enquanto uma funcionalidade não tem dados reais, use uma implementação
-  provisória do Repository com valores fixos (sufixo `Static`, ex.:
-  `ExpenseRepositoryStatic`), registrada em `config/dependencies.dart`.
-  ViewModel e View já nascem prontos; depois só a implementação é trocada.
+  provisória do Repository (sufixo `Static`, ex.: `ExpenseRepositoryStatic`)
+  que lê os dados fictícios do `SampleDataService`
+  ([lib/data/services/sample_data_service.dart](lib/data/services/sample_data_service.dart)),
+  registrada em `config/dependencies.dart`. O `SampleDataService` simula o
+  futuro banco de dados: é a fonte única dos dados fictícios, para que
+  Repositories não dependam uns dos outros. As datas fictícias são relativas
+  a hoje, para que os filtros sempre mostrem algo. ViewModel e View já nascem
+  prontos; depois só a implementação é trocada.
+- **"Hoje" vem de um `Clock`** ([lib/utils/clock.dart](lib/utils/clock.dart)),
+  registrado em `config/dependencies.dart`, nunca de `DateTime.now()` direto.
+  Nos testes, use `FixedClock` (`test/fakes/`).
 - A View escuta o ViewModel com `ListenableBuilder` (ou `context.watch` no
   `app.dart`) e chama seus métodos; nunca altera campos dele diretamente.
 - **Erros** atravessam as camadas como `Result<T>` ([lib/utils/result.dart](lib/utils/result.dart):
@@ -113,16 +121,27 @@ Regras adicionais:
     `Income.initialBalance`, da categoria `IncomeCategory.initialBalance`. Sem
     saldo inicial, nenhuma receita é criada.
   - **Totais são mantidos, nunca recalculados.** Cada conta tem seus totais
-    de receitas e despesas (`AccountBalance.totals`, um `FinancialSummary`),
-    guardados pelo `AccountRepository` junto com a conta. Ao gravar, editar ou
-    excluir uma transação, o Repository aplica só a diferença
-    (`AccountBalance.add` / `remove`; editar = `remove(antiga).add(nova)`) na
-    mesma operação que grava a transação.
-  - Quem precisa de totais (o card da tela inicial, futuras telas de conta)
-    usa esses totais guardados: o total geral é `FinancialSummary.sum` dos
-    totais das contas. **Nunca some a lista de transações para exibir
-    totais.** `FinancialSummary.of(transações)` existe só para conferência
-    (testes) e migração de dados.
+    de receitas e despesas guardados **por dia e por mês** (`TotalsLedger`),
+    como tabelas de agregados no banco. Ao gravar, editar ou excluir uma
+    transação, o Repository aplica só a diferença (`TotalsLedger.add` /
+    `remove`; editar = `remove(antiga).add(nova)`) na mesma operação que grava
+    a transação.
+  - **Totais de um período** vêm de `TotalsLedger.summarize(DateRange)`:
+    meses inteiros usam o total mensal e pedaços de mês, os diários. O
+    `AccountRepository` devolve um `AccountSummary` por conta, e o total geral
+    é `PeriodSummary.sum`. **Nunca some a lista de transações para exibir
+    totais.** `FinancialSummary.of` / `TotalsLedger.of` existem só para criar
+    os totais pela primeira vez (migração) e para conferência nos testes.
+  - **O saldo acumula entre períodos.** `PeriodSummary` traz o saldo anterior
+    (tudo antes do início do período, positivo ou negativo) e as receitas e
+    despesas do período; o saldo exibido é o anterior mais o do período.
+  - **Períodos:** todo filtro vira um `DateRange` (dias inteiros, início e fim
+    incluídos), e Repositories e ViewModels trabalham só com o intervalo. Os
+    filtros prontos são o enum `PeriodFilter` (mês atual, ano atual, últimos 7
+    dias = hoje e os seis anteriores). Planejado: escolher qualquer mês de um
+    ano com ao menos uma transação. Ele será outra forma de produzir um
+    `DateRange`, e os totais mensais do `TotalsLedger` dizem quais meses têm
+    movimento.
 - Imports sempre no formato `package:shadow_finances/...`, nunca relativos
   (exceto testes importando `test/fakes/`).
 - **Casos de uso** (`domain/use_cases/`) só quando uma lógica combinar vários
@@ -172,18 +191,23 @@ lib/
   domain/models/expense_category.dart        # categorias de despesa
   domain/models/income_category.dart         # categorias de receita (inclui saldo inicial)
   domain/models/account.dart                 # conta (id, nome, se é a principal)
-  domain/models/account_balance.dart         # conta + totais guardados e saldo
+  domain/models/account_summary.dart         # conta + resumo do período
   domain/models/financial_summary.dart       # totais de receitas e despesas, saldo
+  domain/models/totals_ledger.dart           # totais por dia/mês; resumo de período
+  domain/models/period_summary.dart          # saldo anterior + totais do período
+  domain/models/date_range.dart              # intervalo de dias
+  domain/models/period_filter.dart           # mês atual, ano atual, últimos 7 dias
   data/services/shared_preferences_service.dart
+  data/services/sample_data_service.dart     # banco fictício (datas relativas a hoje)
   data/repositories/account/
     account_repository.dart                  # interface abstrata
-    account_repository_static.dart           # a única conta e seus totais (provisório)
+    account_repository_static.dart           # lê o SampleDataService (provisório)
   data/repositories/expense/
     expense_repository.dart                  # interface abstrata
-    expense_repository_static.dart           # despesas fictícias (provisório)
+    expense_repository_static.dart           # lê o SampleDataService (provisório)
   data/repositories/income/
     income_repository.dart                   # interface abstrata
-    income_repository_static.dart            # receitas fictícias (provisório)
+    income_repository_static.dart            # lê o SampleDataService (provisório)
   data/repositories/settings/
     settings_repository.dart                 # interface abstrata
     settings_repository_local.dart           # implementação
@@ -202,10 +226,11 @@ lib/
   ui/home/widgets/home_screen.dart
   ui/home/widgets/balance_summary_card.dart  # saldo, receitas e despesas
   ui/home/widgets/transaction_list_tile.dart # uma receita ou despesa na lista
+  ui/home/widgets/period_filter_chips.dart   # seletor de período
   ui/settings/view_models/settings_view_model.dart
   ui/settings/widgets/settings_screen.dart
   l10n/app_*.arb
-  utils/result.dart
+  utils/result.dart, utils/clock.dart
 test/
   fakes/                                     # Repositories e Services falsos
   ...                                        # espelha lib/
