@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// Cabeçalho de uma seção da tela de configurações (ex.: "Idioma", "Tema").
-class SettingsSectionHeader extends StatelessWidget {
-  const SettingsSectionHeader({super.key, required this.title});
+/// Cabeçalho de uma seção de lista (ex.: "Idioma", "Transações").
+class SectionHeader extends StatelessWidget {
+  const SectionHeader({super.key, required this.title});
 
   final String title;
 

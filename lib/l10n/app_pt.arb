@@ -1,9 +1,5 @@
 {
   "@@locale": "pt",
-  "homeTagline": "Suas finanças em um só lugar.",
-  "@homeTagline": {
-    "description": "Frase exibida no centro da tela inicial."
-  },
   "settingsTitle": "Configurações",
   "@settingsTitle": {
     "description": "Título da tela de configurações e dica do botão que a abre."
@@ -31,5 +27,103 @@
   "themeDark": "Escuro",
   "@themeDark": {
     "description": "Opção de tema escuro."
+  },
+  "summaryBalance": "Saldo",
+  "@summaryBalance": {
+    "description": "Rótulo do saldo (receitas menos despesas) no resumo da tela inicial."
+  },
+  "summaryIncome": "Receitas",
+  "@summaryIncome": {
+    "description": "Rótulo do total de receitas no resumo da tela inicial."
+  },
+  "summaryExpenses": "Despesas",
+  "@summaryExpenses": {
+    "description": "Rótulo do total de despesas no resumo da tela inicial."
+  },
+  "homeLoadError": "Não foi possível carregar suas finanças.",
+  "@homeLoadError": {
+    "description": "Mensagem exibida na tela inicial quando o resumo e as transações não podem ser carregados."
+  },
+  "transactionsTitle": "Transações",
+  "@transactionsTitle": {
+    "description": "Cabeçalho da lista de transações na tela inicial."
+  },
+  "transactionsEmpty": "Nenhuma transação registrada.",
+  "@transactionsEmpty": {
+    "description": "Mensagem exibida no lugar da lista de transações quando ela está vazia."
+  },
+  "expenseCategoryFood": "Alimentação",
+  "@expenseCategoryFood": {
+    "description": "Categoria de despesa: alimentação (mercado, restaurantes)."
+  },
+  "expenseCategoryTransport": "Transporte",
+  "@expenseCategoryTransport": {
+    "description": "Categoria de despesa: transporte."
+  },
+  "expenseCategoryHousing": "Moradia",
+  "@expenseCategoryHousing": {
+    "description": "Categoria de despesa: moradia (aluguel, contas da casa)."
+  },
+  "expenseCategoryHealth": "Saúde",
+  "@expenseCategoryHealth": {
+    "description": "Categoria de despesa: saúde."
+  },
+  "expenseCategoryLeisure": "Lazer",
+  "@expenseCategoryLeisure": {
+    "description": "Categoria de despesa: lazer."
+  },
+  "expenseCategoryEducation": "Educação",
+  "@expenseCategoryEducation": {
+    "description": "Categoria de despesa: educação."
+  },
+  "expenseCategoryShopping": "Compras",
+  "@expenseCategoryShopping": {
+    "description": "Categoria de despesa: compras em geral (roupas, eletrônicos)."
+  },
+  "expenseCategoryOther": "Outros",
+  "@expenseCategoryOther": {
+    "description": "Categoria de despesa: qualquer outra."
+  },
+  "transactionSubtitle": "{category} · {date}",
+  "@transactionSubtitle": {
+    "description": "Segunda linha de uma transação na lista: categoria e data (já formatada).",
+    "placeholders": {
+      "category": {
+        "type": "String",
+        "example": "Alimentação"
+      },
+      "date": {
+        "type": "String",
+        "example": "21/10/2026"
+      }
+    }
+  },
+  "incomeCategorySalary": "Salário",
+  "@incomeCategorySalary": {
+    "description": "Categoria de receita: salário."
+  },
+  "incomeCategoryFreelance": "Trabalho autônomo",
+  "@incomeCategoryFreelance": {
+    "description": "Categoria de receita: trabalhos avulsos, freelance."
+  },
+  "incomeCategoryInvestments": "Investimentos",
+  "@incomeCategoryInvestments": {
+    "description": "Categoria de receita: rendimentos de investimentos."
+  },
+  "incomeCategoryGift": "Presente",
+  "@incomeCategoryGift": {
+    "description": "Categoria de receita: dinheiro recebido de presente."
+  },
+  "incomeCategoryRefund": "Reembolso",
+  "@incomeCategoryRefund": {
+    "description": "Categoria de receita: reembolso de um gasto."
+  },
+  "incomeCategoryInitialBalance": "Saldo inicial",
+  "@incomeCategoryInitialBalance": {
+    "description": "Categoria de receita: saldo informado ao criar uma conta. Também é o título da transação, que não tem descrição."
+  },
+  "incomeCategoryOther": "Outros",
+  "@incomeCategoryOther": {
+    "description": "Categoria de receita: qualquer outra."
   }
 }

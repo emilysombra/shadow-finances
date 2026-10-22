@@ -1,5 +1,7 @@
 {
   "@@locale": "pt_PT",
-  "homeTagline": "As suas finanças num só lugar.",
-  "settingsTitle": "Definições"
+  "settingsTitle": "Definições",
+  "homeLoadError": "Não foi possível carregar as suas finanças.",
+  "expenseCategoryHousing": "Habitação",
+  "incomeCategoryFreelance": "Trabalho independente"
 }

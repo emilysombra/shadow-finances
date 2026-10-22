@@ -15,6 +15,12 @@ void main() {
     expect(BrFormat.currency(-1050), '-R\$${nbsp}10,50');
   });
 
+  test('moeda com sinal explícito', () {
+    expect(BrFormat.signedCurrency(500), '+R\$${nbsp}5,00');
+    expect(BrFormat.signedCurrency(-500), '-R\$${nbsp}5,00');
+    expect(BrFormat.signedCurrency(0), 'R\$${nbsp}0,00');
+  });
+
   test('números com vírgula decimal e ponto de milhar', () {
     expect(BrFormat.number(1234567.5), '1.234.567,5');
   });

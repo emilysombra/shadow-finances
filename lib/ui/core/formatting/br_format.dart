@@ -18,6 +18,11 @@ abstract final class BrFormat {
   /// Valor monetário a partir de centavos: `123456` → `R$ 1.234,56`.
   static String currency(int cents) => _currency.format(cents / 100);
 
+  /// Valor monetário com sinal explícito, para entradas e saídas:
+  /// `500` → `+R$ 5,00`, `-500` → `-R$ 5,00`, `0` → `R$ 0,00`.
+  static String signedCurrency(int cents) =>
+      cents > 0 ? '+${currency(cents)}' : currency(cents);
+
   /// Número com separadores brasileiros: `1234.5` → `1.234,5`.
   static String number(num value) => _number.format(value);
 

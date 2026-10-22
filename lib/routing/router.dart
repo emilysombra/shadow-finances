@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import 'package:shadow_finances/routing/routes.dart';
+import 'package:shadow_finances/ui/home/view_models/home_view_model.dart';
 import 'package:shadow_finances/ui/home/widgets/home_screen.dart';
 import 'package:shadow_finances/ui/settings/widgets/settings_screen.dart';
 
@@ -14,7 +15,14 @@ Route<void> onGenerateRoute(
     settings: settings,
     builder: (context) => switch (settings.name) {
       Routes.settings => SettingsScreen(viewModel: context.read()),
-      _ => HomeScreen(appTitle: appTitle),
+      _ => HomeScreen(
+        appTitle: appTitle,
+        viewModel: HomeViewModel(
+          accountRepository: context.read(),
+          incomeRepository: context.read(),
+          expenseRepository: context.read(),
+        )..load(),
+      ),
     },
   );
 }

@@ -85,8 +85,15 @@ Regras adicionais:
   **ViewModels de estado global** (hoje só `SettingsViewModel`, porque idioma e
   tema afetam o app inteiro) são registrados em `config/dependencies.dart`, carregados
   antes do `runApp` e lidos pela rota com `context.read()`.
-- Tela sem estado (ex.: `HomeScreen` hoje) não precisa de ViewModel; ganha um
-  assim que tiver dados ou ações.
+- Tela sem estado não precisa de ViewModel; ganha um assim que tiver dados ou
+  ações (como a `HomeScreen`, que ganhou o `HomeViewModel` ao exibir o resumo).
+  Um ViewModel pode usar vários Repositories (o `HomeViewModel` usa contas,
+  receitas e despesas); se essa combinação passar a ser usada por outro
+  ViewModel, extraia-a para um caso de uso.
+- Enquanto uma funcionalidade não tem dados reais, use uma implementação
+  provisória do Repository com valores fixos (sufixo `Static`, ex.:
+  `ExpenseRepositoryStatic`), registrada em `config/dependencies.dart`.
+  ViewModel e View já nascem prontos; depois só a implementação é trocada.
 - A View escuta o ViewModel com `ListenableBuilder` (ou `context.watch` no
   `app.dart`) e chama seus métodos; nunca altera campos dele diretamente.
 - **Erros** atravessam as camadas como `Result<T>` ([lib/utils/result.dart](lib/utils/result.dart):
@@ -94,6 +101,28 @@ Regras adicionais:
   exceções; Repositories as capturam e devolvem `Failure`.
 - **Dinheiro** é sempre `int` em centavos nos modelos e cálculos; nunca `double`
   (que acumula erros de arredondamento). Só vira texto na View, via `BrFormat`.
+- **Modelo financeiro** (em `domain/models/`):
+  - `Transaction` é `sealed`, com dois subtipos: `Expense` (saída) e `Income`
+    (entrada). Valores são sempre positivos; o tipo diz o sentido. Use
+    `switch` sobre a transação para que o compilador exija tratar os dois.
+  - **Toda transação pertence a uma conta** (`accountId`, obrigatório na
+    classe base). Ao criar uma sem conta escolhida, use a principal:
+    `AccountRepository.getMainAccount()` (a conta com `isMain`, que existe
+    exatamente uma). Por ora o usuário tem só essa conta.
+  - O saldo inicial de uma conta (opcional) entra como receita
+    `Income.initialBalance`, da categoria `IncomeCategory.initialBalance`. Sem
+    saldo inicial, nenhuma receita é criada.
+  - **Totais são mantidos, nunca recalculados.** Cada conta tem seus totais
+    de receitas e despesas (`AccountBalance.totals`, um `FinancialSummary`),
+    guardados pelo `AccountRepository` junto com a conta. Ao gravar, editar ou
+    excluir uma transação, o Repository aplica só a diferença
+    (`AccountBalance.add` / `remove`; editar = `remove(antiga).add(nova)`) na
+    mesma operação que grava a transação.
+  - Quem precisa de totais (o card da tela inicial, futuras telas de conta)
+    usa esses totais guardados: o total geral é `FinancialSummary.sum` dos
+    totais das contas. **Nunca some a lista de transações para exibir
+    totais.** `FinancialSummary.of(transações)` existe só para conferência
+    (testes) e migração de dados.
 - Imports sempre no formato `package:shadow_finances/...`, nunca relativos
   (exceto testes importando `test/fakes/`).
 - **Casos de uso** (`domain/use_cases/`) só quando uma lógica combinar vários
@@ -139,21 +168,42 @@ lib/
   routing/routes.dart, routing/router.dart
   domain/models/app_language.dart            # idiomas e regra de escolha
   domain/models/app_theme_mode.dart          # temas que o usuário pode escolher
+  domain/models/transaction.dart             # Transaction (sealed): Expense e Income
+  domain/models/expense_category.dart        # categorias de despesa
+  domain/models/income_category.dart         # categorias de receita (inclui saldo inicial)
+  domain/models/account.dart                 # conta (id, nome, se é a principal)
+  domain/models/account_balance.dart         # conta + totais guardados e saldo
+  domain/models/financial_summary.dart       # totais de receitas e despesas, saldo
   data/services/shared_preferences_service.dart
+  data/repositories/account/
+    account_repository.dart                  # interface abstrata
+    account_repository_static.dart           # a única conta e seus totais (provisório)
+  data/repositories/expense/
+    expense_repository.dart                  # interface abstrata
+    expense_repository_static.dart           # despesas fictícias (provisório)
+  data/repositories/income/
+    income_repository.dart                   # interface abstrata
+    income_repository_static.dart            # receitas fictícias (provisório)
   data/repositories/settings/
     settings_repository.dart                 # interface abstrata
     settings_repository_local.dart           # implementação
   ui/core/
     themes/app_theme.dart, app_spacing.dart
     themes/app_theme_mode_flutter.dart       # AppThemeMode ↔ ThemeMode do Flutter
+    themes/finance_colors.dart               # cores de receita e despesa
     layout/window_size_class.dart
     formatting/br_format.dart
     l10n/app_language_locale.dart            # AppLanguage ↔ Locale do Flutter
+    l10n/category_label.dart                 # nome traduzido das categorias
     widgets/page_body.dart
+    widgets/section_header.dart              # título de seção em listas
+    widgets/category_avatar.dart             # ícone das categorias
+  ui/home/view_models/home_view_model.dart
   ui/home/widgets/home_screen.dart
+  ui/home/widgets/balance_summary_card.dart  # saldo, receitas e despesas
+  ui/home/widgets/transaction_list_tile.dart # uma receita ou despesa na lista
   ui/settings/view_models/settings_view_model.dart
   ui/settings/widgets/settings_screen.dart
-  ui/settings/widgets/settings_section_header.dart
   l10n/app_*.arb
   utils/result.dart
 test/
@@ -187,10 +237,14 @@ test/
 
 - Cores **sempre** do tema: `Theme.of(context).colorScheme` (gerado por
   `ColorScheme.fromSeed` em [lib/ui/core/themes/app_theme.dart](lib/ui/core/themes/app_theme.dart),
-  o único lugar com uma cor escrita: a semente). Proibido `Colors.xxx`,
+  o único lugar com cores escritas: as sementes). Proibido `Colors.xxx`,
   `Color(0x...)` ou opacidades fixas em widgets.
-- Cores semânticas que o Material não tem (ex.: receita/despesa) são definidas
-  numa `ThemeExtension` com variantes clara e escura, derivadas do esquema.
+- Cores semânticas que o Material não tem são definidas numa `ThemeExtension`
+  com variantes clara e escura, derivadas do esquema. Receita e despesa já
+  existem em `FinanceColors.of(context)` ([lib/ui/core/themes/finance_colors.dart](lib/ui/core/themes/finance_colors.dart)):
+  `income`/`expense` para texto sobre superfícies e `incomeContainer`/
+  `onIncomeContainer` (e equivalentes de despesa) para blocos coloridos.
+  Receita vem de uma semente verde; despesa, dos papéis de erro do esquema.
 - Tipografia via `Theme.of(context).textTheme`; não fixe `fontSize`.
 - Tema claro e escuro suportados desde o início; teste as telas nos dois.
 - O usuário escolhe o tema em Configurações: claro, escuro ou "usar tema do
@@ -206,6 +260,10 @@ test/
 - Componentes recebem dados e callbacks por parâmetro; não acessam ViewModels
   por conta própria. Só a tela (widget raiz da feature) conhece o ViewModel.
 - Prefira compor widgets pequenos a criar widgets grandes com muitos `if`.
+- Listas que podem crescer (transações) usam construção preguiçosa
+  (`SliverList.builder` / `ListView.builder`), nunca `children` com todos os itens.
+- Teste telas novas numa largura estreita (320 dp) com fonte em 200%
+  (`MediaQueryData(textScaler: TextScaler.linear(2))`): nada pode transbordar.
 
 ## Internacionalização (i18n)
 
