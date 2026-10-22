@@ -38,6 +38,7 @@ com camadas separadas:
 
 - Layouts responsivos, com medidas relativas ao espaço disponível;
 - Componentes reutilizáveis em `lib/ui/core/widgets/`;
-- Cores e tipografia sempre do tema (claro e escuro).
+- Cores e tipografia sempre do tema (claro e escuro); o usuário escolhe o tema
+  nas configurações ou segue o do dispositivo.
 
 Regras detalhadas, estrutura de pastas e detalhes do ambiente em [CLAUDE.md](CLAUDE.md).

@@ -3,5 +3,9 @@
   "homeTagline": "Your finances in one place.",
   "settingsTitle": "Settings",
   "languageSectionTitle": "Language",
-  "languageFollowDevice": "Use device language"
+  "languageFollowDevice": "Use device language",
+  "themeSectionTitle": "Theme",
+  "themeFollowDevice": "Use device theme",
+  "themeLight": "Light",
+  "themeDark": "Dark"
 }

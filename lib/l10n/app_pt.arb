@@ -15,5 +15,21 @@
   "languageFollowDevice": "Usar idioma do dispositivo",
   "@languageFollowDevice": {
     "description": "Opção que faz o app seguir o idioma configurado no sistema."
+  },
+  "themeSectionTitle": "Tema",
+  "@themeSectionTitle": {
+    "description": "Cabeçalho da seção de escolha de tema (claro/escuro) nas configurações."
+  },
+  "themeFollowDevice": "Usar tema do dispositivo",
+  "@themeFollowDevice": {
+    "description": "Opção que faz o app seguir o tema claro/escuro configurado no sistema."
+  },
+  "themeLight": "Claro",
+  "@themeLight": {
+    "description": "Opção de tema claro."
+  },
+  "themeDark": "Escuro",
+  "@themeDark": {
+    "description": "Opção de tema escuro."
   }
 }

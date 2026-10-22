@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shadow_finances/app.dart';
 import 'package:shadow_finances/config/dependencies.dart';
 import 'package:shadow_finances/domain/models/app_language.dart';
+import 'package:shadow_finances/domain/models/app_theme_mode.dart';
 
 import 'fakes/fake_settings_repository.dart';
 
@@ -91,5 +92,47 @@ void main() {
 
     expect(find.text('Configurações'), findsOneWidget);
     expect(repository.language, isNull);
+  });
+
+  testWidgets('trocar o tema nas configurações muda o app e salva', (
+    tester,
+  ) async {
+    final repository = FakeSettingsRepository();
+    await pumpApp(
+      tester,
+      deviceLocales: const [Locale('pt', 'BR')],
+      repository: repository,
+    );
+    ThemeMode appThemeMode() =>
+        tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode!;
+
+    expect(appThemeMode(), ThemeMode.system);
+
+    await tester.tap(find.byTooltip('Configurações'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Escuro'));
+    await tester.pumpAndSettle();
+
+    expect(appThemeMode(), ThemeMode.dark);
+    expect(repository.themeMode, AppThemeMode.dark);
+
+    await tester.tap(find.text('Usar tema do dispositivo'));
+    await tester.pumpAndSettle();
+
+    expect(appThemeMode(), ThemeMode.system);
+    expect(repository.themeMode, isNull);
+  });
+
+  testWidgets('tema salvo é aplicado ao abrir o app', (tester) async {
+    await pumpApp(
+      tester,
+      deviceLocales: const [Locale('pt', 'BR')],
+      repository: FakeSettingsRepository(themeMode: AppThemeMode.light),
+    );
+
+    expect(
+      tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode,
+      ThemeMode.light,
+    );
   });
 }

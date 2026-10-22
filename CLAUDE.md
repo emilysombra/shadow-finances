@@ -76,8 +76,8 @@ Regras adicionais:
   testes passem versões falsas.
 - **ViewModels de tela** são criados na rota ([lib/routing/router.dart](lib/routing/router.dart))
   e entregues à tela pelo construtor (`SettingsScreen(viewModel: ...)`).
-  **ViewModels de estado global** (hoje só `SettingsViewModel`, porque o idioma
-  afeta o app inteiro) são registrados em `config/dependencies.dart`, carregados
+  **ViewModels de estado global** (hoje só `SettingsViewModel`, porque idioma e
+  tema afetam o app inteiro) são registrados em `config/dependencies.dart`, carregados
   antes do `runApp` e lidos pela rota com `context.read()`.
 - Tela sem estado (ex.: `HomeScreen` hoje) não precisa de ViewModel; ganha um
   assim que tiver dados ou ações.
@@ -132,12 +132,14 @@ lib/
   config/dependencies.dart
   routing/routes.dart, routing/router.dart
   domain/models/app_language.dart            # idiomas e regra de escolha
+  domain/models/app_theme_mode.dart          # temas que o usuário pode escolher
   data/services/shared_preferences_service.dart
   data/repositories/settings/
     settings_repository.dart                 # interface abstrata
     settings_repository_local.dart           # implementação
   ui/core/
     themes/app_theme.dart, app_spacing.dart
+    themes/app_theme_mode_flutter.dart       # AppThemeMode ↔ ThemeMode do Flutter
     layout/window_size_class.dart
     formatting/br_format.dart
     l10n/app_language_locale.dart            # AppLanguage ↔ Locale do Flutter
@@ -145,6 +147,7 @@ lib/
   ui/home/widgets/home_screen.dart
   ui/settings/view_models/settings_view_model.dart
   ui/settings/widgets/settings_screen.dart
+  ui/settings/widgets/settings_section_header.dart
   l10n/app_*.arb
   utils/result.dart
 test/
@@ -184,6 +187,10 @@ test/
   numa `ThemeExtension` com variantes clara e escura, derivadas do esquema.
 - Tipografia via `Theme.of(context).textTheme`; não fixe `fontSize`.
 - Tema claro e escuro suportados desde o início; teste as telas nos dois.
+- O usuário escolhe o tema em Configurações: claro, escuro ou "usar tema do
+  dispositivo" (`null`, o padrão). A escolha é o enum `AppThemeMode`
+  ([lib/domain/models/app_theme_mode.dart](lib/domain/models/app_theme_mode.dart)),
+  salva pelo `SettingsRepository` e aplicada via `MaterialApp.themeMode`.
 
 ### Reusabilidade
 

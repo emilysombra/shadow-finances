@@ -3,5 +3,9 @@
   "homeTagline": "Vos finances en un seul endroit.",
   "settingsTitle": "Paramètres",
   "languageSectionTitle": "Langue",
-  "languageFollowDevice": "Utiliser la langue de l’appareil"
+  "languageFollowDevice": "Utiliser la langue de l’appareil",
+  "themeSectionTitle": "Thème",
+  "themeFollowDevice": "Utiliser le thème de l’appareil",
+  "themeLight": "Clair",
+  "themeDark": "Sombre"
 }

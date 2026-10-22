@@ -3,5 +3,9 @@
   "homeTagline": "Tus finanzas en un solo lugar.",
   "settingsTitle": "Configuración",
   "languageSectionTitle": "Idioma",
-  "languageFollowDevice": "Usar el idioma del dispositivo"
+  "languageFollowDevice": "Usar el idioma del dispositivo",
+  "themeSectionTitle": "Tema",
+  "themeFollowDevice": "Usar el tema del dispositivo",
+  "themeLight": "Claro",
+  "themeDark": "Oscuro"
 }
