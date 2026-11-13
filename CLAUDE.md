@@ -38,6 +38,29 @@ make shell        # shell no container, para qualquer outro comando
 Nunca rode `flutter`/`dart` direto no host. Para comandos avulsos:
 `docker compose run --rm flutter <comando>`.
 
+No Windows, o Docker Desktop não repassa USB ao container: `make run-android`
+(que monta `/dev/bus/usb`) só funciona em host Linux. Use `make run-web` ou
+instale o `make apk` no aparelho.
+
+### CI
+
+[.github/workflows/ci.yml](.github/workflows/ci.yml) roda `dart format`
+(conferência), `flutter analyze` e `flutter test` em cada PR e push na `main`.
+A versão do Flutter e o commit esperado são lidos do
+[Dockerfile](docker/Dockerfile), então mudar a versão lá já muda o CI. As
+actions são fixadas por SHA (com a versão em comentário) e o Dependabot
+([.github/dependabot.yml](.github/dependabot.yml)) abre PRs quando sai versão
+nova delas.
+
+### Análise estática
+
+[analysis_options.yaml](analysis_options.yaml) usa as regras do
+`flutter_lints` mais `strict-casts`/`strict-inference`/`strict-raw-types` e
+regras que transformam convenções em erro: imports `package:` em `lib/`,
+imports em ordem, e Futures não aguardadas (`unawaited_futures` /
+`discarded_futures`). Para disparar uma Future de propósito sem esperar,
+use `unawaited(...)` de `dart:async`.
+
 ## Como trabalhar neste projeto
 
 - **A pessoa usuária não tem experiência com Flutter.** Ao fazer qualquer mudança,
@@ -66,13 +89,13 @@ View  ──▶  ViewModel  ──▶  Repository  ──▶  Service
             tela)          dados)           rede, plugins)
 ```
 
-| Camada | O que faz | O que **não** pode fazer |
-|---|---|---|
-| **View** (`ui/<feature>/widgets/`) | Monta widgets a partir do estado do ViewModel; repassa eventos (toques, textos) para o ViewModel. | Ter regra de negócio, chamar Repository/Service, formatar ou calcular dados além do necessário para exibir. |
+| Camada                                      | O que faz                                                                                                       | O que **não** pode fazer                                                                                                                         |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **View** (`ui/<feature>/widgets/`)          | Monta widgets a partir do estado do ViewModel; repassa eventos (toques, textos) para o ViewModel.               | Ter regra de negócio, chamar Repository/Service, formatar ou calcular dados além do necessário para exibir.                                      |
 | **ViewModel** (`ui/<feature>/view_models/`) | Estende `ChangeNotifier`; guarda o estado da tela; expõe comandos (métodos) que a View chama; usa Repositories. | Importar `package:flutter/material.dart` ou widgets, receber `BuildContext`, acessar Services diretamente. Só `package:flutter/foundation.dart`. |
-| **Repository** (`data/repositories/`) | Única fonte da verdade de um tipo de dado; converte dados crus em modelos de domínio; cache, retentativas. | Conhecer UI ou ViewModels; depender de outro Repository. |
-| **Service** (`data/services/`) | Encapsula uma fonte externa (SQLite, `shared_preferences`, HTTP, plugins). Sem estado e sem regra. | Ter lógica de negócio. |
-| **Modelos de domínio** (`domain/models/`) | Classes imutáveis em Dart puro (sem Flutter) que representam conceitos do app (transação, conta, categoria). | Depender de qualquer outra camada. |
+| **Repository** (`data/repositories/`)       | Única fonte da verdade de um tipo de dado; converte dados crus em modelos de domínio; cache, retentativas.      | Conhecer UI ou ViewModels; depender de outro Repository.                                                                                         |
+| **Service** (`data/services/`)              | Encapsula uma fonte externa (SQLite, `shared_preferences`, HTTP, plugins). Sem estado e sem regra.              | Ter lógica de negócio.                                                                                                                           |
+| **Modelos de domínio** (`domain/models/`)   | Classes imutáveis em Dart puro (sem Flutter) que representam conceitos do app (transação, conta, categoria).    | Depender de qualquer outra camada.                                                                                                               |
 
 Regras adicionais:
 
@@ -85,7 +108,8 @@ Regras adicionais:
   (`HomeScreen(viewModel: ...)`). O `_withViewModel` usa um
   `ChangeNotifierProvider`, que chama `dispose()` quando a tela sai da pilha;
   ViewModels que escutam algo (ex.: um `Stream`) cancelam a escuta no
-  `dispose()`.
+  `dispose()`. Telas de período começam a carregar na criação (`_loaded`, sem
+  esperar: a tela abre mostrando o carregamento).
   **ViewModels de estado global** (hoje só `SettingsViewModel`, porque idioma e
   tema afetam o app inteiro) são registrados em `config/dependencies.dart`, carregados
   antes do `runApp` e lidos pela rota com `context.read()`.
@@ -105,7 +129,12 @@ Regras adicionais:
   classe base `PeriodViewModel` ([lib/ui/core/view_models/period_view_model.dart](lib/ui/core/view_models/period_view_model.dart):
   escuta o filtro do `PeriodFilterRepository`, intervalo, resumo,
   transações, erro e descarte de respostas atrasadas ou de telas fechadas) e
-  a tela pelo `PeriodOverviewScrollView` (`ui/core/widgets/`). Cada ViewModel
+  a tela pelo `PeriodOverviewScrollView` (`ui/core/widgets/`).
+  `load()` avisa a tela no início e no fim: período novo tira os dados
+  antigos da tela (mostra o carregamento); recarregar o mesmo período mantém
+  os dados até chegarem os novos. Com erro, a tela mostra "Tentar novamente",
+  que chama `load()`. As telas ficam dentro de `ReloadOnResume`, que recarrega
+  quando o app volta ao primeiro plano (o dia pode ter virado). Cada ViewModel
   acrescenta só o que é dele (ex.: `HomeViewModel` limita a lista a
   `recentLimit` = 5). Classes base de ViewModels usadas por várias
   funcionalidades ficam em `ui/core/view_models/`.
@@ -259,6 +288,7 @@ lib/
     widgets/transaction_list_tile.dart       # uma receita ou despesa na lista
     widgets/period_filter_chips.dart         # seletor de período
     widgets/period_overview_scroll_view.dart # seletor + card + lista (telas de período)
+    widgets/reload_on_resume.dart            # recarrega ao voltar ao app
     view_models/period_view_model.dart       # base das telas de período
   ui/home/view_models/home_view_model.dart   # até 5 transações
   ui/home/widgets/home_screen.dart           # + botão "ver todas" + seção de gráficos
@@ -328,6 +358,8 @@ test/
   (`SliverList.builder` / `ListView.builder`), nunca `children` com todos os itens.
 - Teste telas novas numa largura estreita (320 dp) com fonte em 200%
   (`MediaQueryData(textScaler: TextScaler.linear(2))`): nada pode transbordar.
+  [test/app_test.dart](test/app_test.dart) já percorre as telas assim nos dois
+  temas; tela nova entra nesse teste.
 
 ### Gráficos
 
@@ -365,13 +397,13 @@ o português de Portugal for diferente), rode `make l10n` e use
 `AppLocalizations.of(context).chave`. O teste [test/l10n/arb_files_test.dart](test/l10n/arb_files_test.dart)
 falha se alguma tradução faltar.
 
-| Idioma | Locale | Arquivo |
-|---|---|---|
-| Português (Brasil) — **padrão e template** | `pt_BR` | `app_pt.arb` |
-| Português (Portugal) | `pt_PT` | `app_pt_PT.arb` (só o que difere do pt-BR) |
-| Espanhol (América Latina) | `es_419` | `app_es.arb` |
-| Inglês (EUA) | `en_US` | `app_en.arb` |
-| Francês | `fr` | `app_fr.arb` |
+| Idioma                                     | Locale   | Arquivo                                    |
+| ------------------------------------------ | -------- | ------------------------------------------ |
+| Português (Brasil) — **padrão e template** | `pt_BR`  | `app_pt.arb`                               |
+| Português (Portugal)                       | `pt_PT`  | `app_pt_PT.arb` (só o que difere do pt-BR) |
+| Espanhol (América Latina)                  | `es_419` | `app_es.arb`                               |
+| Inglês (EUA)                               | `en_US`  | `app_en.arb`                               |
+| Francês                                    | `fr`     | `app_fr.arb`                               |
 
 - `app_pt.arb` é o template: toda chave nova nasce nele, com descrição
   (`@chave`), e deve ser adicionada a todos os outros arquivos na mesma mudança.
@@ -452,7 +484,7 @@ O app lida com dados financeiros, que são sensíveis:
 - Só pacotes com manutenção ativa e **licença compatível com a GPL-3.0** (MIT,
   BSD, Apache-2.0, LGPL, GPL...). Pacotes sem licença ou proprietários não
   entram. Confira a licença no pub.dev antes de adicionar.
-- O `flutter pub get` mostra avisos de segurança (*advisories*) das
+- O `flutter pub get` mostra avisos de segurança (_advisories_) das
   dependências; eles não podem ser ignorados.
 - O [Dockerfile](docker/Dockerfile) verifica a integridade de tudo que baixa.
   Ao mudar uma versão, atualize também o hash correspondente:
@@ -462,4 +494,3 @@ O app lida com dados financeiros, que são sensíveis:
     e só então gere o SHA-256 com `sha256sum`.
 - Serviços de desenvolvimento escutam só em `127.0.0.1` ([compose.yaml](compose.yaml)),
   para não ficarem expostos na rede local.
-
