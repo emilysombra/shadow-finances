@@ -1,0 +1,8 @@
+# Abre PRs quando sai versão nova das actions usadas no CI (que ficam
+# fixadas por SHA e, sem isso, envelheceriam sem ninguém perceber).
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
