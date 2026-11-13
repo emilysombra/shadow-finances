@@ -24,10 +24,11 @@ abstract class PeriodViewModel extends ChangeNotifier {
     required this._getPeriodOverview,
     required this._periodFilterRepository,
   }) {
-    _filterChanges = _periodFilterRepository.changes.listen((_) {
-      notifyListeners(); // o seletor já mostra o filtro novo
-      load();
-    });
+    // load() avisa a tela logo no início, então o seletor já mostra o
+    // filtro novo enquanto os dados dele carregam.
+    _filterChanges = _periodFilterRepository.changes.listen(
+      (_) => unawaited(load()),
+    );
   }
 
   final Clock _clock;
@@ -38,6 +39,10 @@ abstract class PeriodViewModel extends ChangeNotifier {
   PeriodSummary? _summary;
   List<Transaction> _transactions = const [];
   bool _hasError = false;
+
+  /// Intervalo dos dados em [summary] e [transactions]; `null` se não há
+  /// dados carregados.
+  DateRange? _loadedRange;
 
   /// Conta os carregamentos, para descartar respostas de um período que o
   /// usuário já trocou por outro (ou de uma tela já fechada).
@@ -50,7 +55,8 @@ abstract class PeriodViewModel extends ChangeNotifier {
   /// Intervalo de datas do período escolhido.
   DateRange get range => filter.rangeOn(_clock.now());
 
-  /// Resumo do período; `null` enquanto carrega ou se o carregamento falhou.
+  /// Resumo do período; `null` enquanto carrega um período novo ou se o
+  /// carregamento falhou.
   PeriodSummary? get summary => _summary;
 
   /// Todas as receitas e despesas do período, mais recentes primeiro.
@@ -65,8 +71,24 @@ abstract class PeriodViewModel extends ChangeNotifier {
       _periodFilterRepository.select(filter);
 
   /// Carrega (ou recarrega) o resumo e as transações do período.
+  ///
+  /// Avisa a tela no início e no fim. Se o período mudou (outro filtro ou
+  /// virada do dia), os dados antigos saem da tela na hora, para que ela
+  /// mostre o carregamento em vez de valores de outro período. Recarregar o
+  /// mesmo período (ex.: ao voltar ao app) mantém os dados até chegarem os
+  /// novos, sem piscar.
   Future<void> load() async {
+    if (_disposed) return;
     final version = ++_loadVersion;
+    final range = this.range;
+    if (range != _loadedRange) {
+      _summary = null;
+      _transactions = const [];
+      _loadedRange = null;
+    }
+    _hasError = false;
+    notifyListeners();
+
     final result = await _getPeriodOverview(range);
 
     // Período trocado ou tela fechada enquanto este carregava: descarta.
@@ -76,11 +98,12 @@ abstract class PeriodViewModel extends ChangeNotifier {
       case Ok(:final value):
         _summary = value.summary;
         _transactions = value.transactions;
-        _hasError = false;
+        _loadedRange = range;
       case Failure():
         // Não deixa na tela os dados do período anterior.
         _summary = null;
         _transactions = const [];
+        _loadedRange = null;
         _hasError = true;
     }
     notifyListeners();
@@ -90,7 +113,7 @@ abstract class PeriodViewModel extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
-    _filterChanges.cancel();
+    unawaited(_filterChanges.cancel());
     super.dispose();
   }
 }

@@ -69,7 +69,60 @@ void main() {
 
     expect(viewModel.summary, isNotNull);
     expect(viewModel.transactions, [market, salary]);
-    expect(notifications, 1);
+    expect(notifications, 2, reason: 'início (carregando) + dados prontos');
+  });
+
+  test(
+    'período novo: tira os dados antigos da tela enquanto carrega',
+    () async {
+      await viewModel.load();
+      accountRepository.holdResponses = true;
+
+      viewModel.selectFilter(PeriodFilter.currentYear);
+      await pumpEventQueue();
+
+      expect(viewModel.summary, isNull, reason: 'a tela mostra o carregamento');
+      expect(viewModel.transactions, isEmpty);
+
+      accountRepository.pending.single.complete();
+      await pumpEventQueue();
+      expect(viewModel.summary, isNotNull);
+    },
+  );
+
+  test('mesmo período: mantém os dados enquanto recarrega', () async {
+    await viewModel.load();
+    accountRepository.holdResponses = true;
+
+    final reload = viewModel.load();
+    await pumpEventQueue();
+
+    expect(viewModel.summary, isNotNull, reason: 'nada pisca na tela');
+    expect(viewModel.transactions, [market, salary]);
+
+    accountRepository.pending.single.complete();
+    await reload;
+  });
+
+  test('tentar de novo depois de um erro tira o erro da tela', () async {
+    expenseRepository.shouldFail = true;
+    await viewModel.load();
+    expect(viewModel.hasError, isTrue);
+
+    expenseRepository.shouldFail = false;
+    accountRepository.holdResponses = true;
+    final retry = viewModel.load();
+    await pumpEventQueue();
+    expect(viewModel.hasError, isFalse, reason: 'mostra o carregamento');
+
+    accountRepository.pending.single.complete();
+    await retry;
+    expect(viewModel.summary, isNotNull);
+  });
+
+  test('load depois de fechada a tela não faz nada', () async {
+    viewModel.dispose();
+    await expectLater(viewModel.load(), completes);
   });
 
   test('selectFilter escolhe para o app e recarrega o novo período', () async {
