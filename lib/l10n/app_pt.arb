@@ -40,9 +40,13 @@
   "@summaryExpenses": {
     "description": "Rótulo do total de despesas no resumo da tela inicial."
   },
-  "homeLoadError": "Não foi possível carregar suas finanças.",
-  "@homeLoadError": {
-    "description": "Mensagem exibida na tela inicial quando o resumo e as transações não podem ser carregados."
+  "periodLoadError": "Não foi possível carregar suas finanças.",
+  "@periodLoadError": {
+    "description": "Mensagem exibida nas telas de período (inicial e transações) quando o resumo e as transações não podem ser carregados."
+  },
+  "retry": "Tentar novamente",
+  "@retry": {
+    "description": "Botão que tenta carregar de novo os dados que falharam."
   },
   "transactionsTitle": "Transações",
   "@transactionsTitle": {

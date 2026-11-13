@@ -1,7 +1,7 @@
 {
   "@@locale": "pt_PT",
   "settingsTitle": "Definições",
-  "homeLoadError": "Não foi possível carregar as suas finanças.",
+  "periodLoadError": "Não foi possível carregar as suas finanças.",
   "expenseCategoryHousing": "Habitação",
   "incomeCategoryFreelance": "Trabalho independente"
 }

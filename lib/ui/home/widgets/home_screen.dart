@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 
 import 'package:shadow_finances/l10n/app_localizations.dart';
 import 'package:shadow_finances/routing/routes.dart';
-import 'package:shadow_finances/ui/core/widgets/page_body.dart';
 import 'package:shadow_finances/ui/core/themes/app_spacing.dart';
+import 'package:shadow_finances/ui/core/widgets/page_body.dart';
 import 'package:shadow_finances/ui/core/widgets/period_overview_scroll_view.dart';
+import 'package:shadow_finances/ui/core/widgets/reload_on_resume.dart';
 import 'package:shadow_finances/ui/core/widgets/section_header.dart';
 import 'package:shadow_finances/ui/home/view_models/home_view_model.dart';
 import 'package:shadow_finances/ui/home/widgets/chart_card.dart';
@@ -38,53 +39,60 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: PageBody(
-        child: ListenableBuilder(
-          listenable: viewModel,
-          builder: (context, _) => PeriodOverviewScrollView(
-            filter: viewModel.filter,
-            range: viewModel.range,
-            summary: viewModel.summary,
-            hasError: viewModel.hasError,
-            transactions: viewModel.recentTransactions,
-            onFilterSelected: viewModel.selectFilter,
-            listTitle: l10n.transactionsTitle,
-            footerSlivers: [
-              SliverPadding(
-                padding: EdgeInsets.all(spacing.md),
-                sliver: SliverToBoxAdapter(
-                  child: Center(
-                    child: FilledButton.tonalIcon(
-                      // O filtro é compartilhado: a tela completa já abre
-                      // nele.
-                      onPressed: () =>
-                          Navigator.of(context).pushNamed(Routes.transactions),
-                      icon: const Icon(Icons.arrow_forward),
-                      iconAlignment: IconAlignment.end,
-                      label: Text(l10n.viewAllTransactions),
+      body: ReloadOnResume(
+        onResume: viewModel.load,
+        child: PageBody(
+          child: ListenableBuilder(
+            listenable: viewModel,
+            builder: (context, _) => PeriodOverviewScrollView(
+              filter: viewModel.filter,
+              range: viewModel.range,
+              summary: viewModel.summary,
+              hasError: viewModel.hasError,
+              transactions: viewModel.recentTransactions,
+              onFilterSelected: viewModel.selectFilter,
+              onRetry: viewModel.load,
+              listTitle: l10n.transactionsTitle,
+              footerSlivers: [
+                SliverPadding(
+                  padding: EdgeInsets.all(spacing.md),
+                  sliver: SliverToBoxAdapter(
+                    child: Center(
+                      child: FilledButton.tonalIcon(
+                        // O filtro é compartilhado: a tela completa já abre
+                        // nele.
+                        onPressed: () =>
+                            Navigator.of(context)
+                                .pushNamed(Routes.transactions),
+                        icon: const Icon(Icons.arrow_forward),
+                        iconAlignment: IconAlignment.end,
+                        label: Text(l10n.viewAllTransactions),
+                      ),
                     ),
                   ),
                 ),
-              ),
-              SliverToBoxAdapter(child: SectionHeader(title: l10n.chartsTitle)),
-              // Cada gráfico é um ChartCard; gráficos novos entram aqui.
-              SliverPadding(
-                padding: EdgeInsets.fromLTRB(
-                  spacing.md,
-                  0,
-                  spacing.md,
-                  spacing.md,
+                SliverToBoxAdapter(
+                  child: SectionHeader(title: l10n.chartsTitle),
                 ),
-                sliver: SliverToBoxAdapter(
-                  child: ChartCard(
-                    title: l10n.chartExpensesByCategory,
-                    child: ExpensesByCategoryChart(
-                      expenses: viewModel.expensesByCategory,
+                // Cada gráfico é um ChartCard; gráficos novos entram aqui.
+                SliverPadding(
+                  padding: EdgeInsets.fromLTRB(
+                    spacing.md,
+                    0,
+                    spacing.md,
+                    spacing.md,
+                  ),
+                  sliver: SliverToBoxAdapter(
+                    child: ChartCard(
+                      title: l10n.chartExpensesByCategory,
+                      child: ExpensesByCategoryChart(
+                        expenses: viewModel.expensesByCategory,
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

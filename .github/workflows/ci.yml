@@ -1,0 +1,51 @@
+# Confere formatação, análise estática e testes em cada PR e em cada push na
+# main. Usa a mesma versão do Flutter do docker/Dockerfile (lida de lá, para
+# não haver duas fontes) e confere o commit da tag, como o Dockerfile faz.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# O workflow só lê o repositório.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      # Actions fixadas por SHA: uma tag pode ser movida, o commit não.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Instalar Flutter (versão do Dockerfile)
+        run: |
+          version=$(sed -n 's/^ARG FLUTTER_VERSION=//p' docker/Dockerfile)
+          commit=$(sed -n 's/^ARG FLUTTER_COMMIT=//p' docker/Dockerfile)
+          git clone --depth 1 --branch "$version" \
+            https://github.com/flutter/flutter.git "$RUNNER_TEMP/flutter"
+          test "$(git -C "$RUNNER_TEMP/flutter" rev-parse HEAD)" = "$commit"
+          echo "$RUNNER_TEMP/flutter/bin" >> "$GITHUB_PATH"
+
+      - name: Desativar analytics
+        run: flutter config --no-analytics && dart --disable-analytics
+
+      - name: Dependências (gera as traduções)
+        run: flutter pub get
+
+      - name: Formatação
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: Análise estática
+        run: flutter analyze
+
+      - name: Testes
+        run: flutter test

@@ -3,13 +3,13 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shadow_finances/app.dart';
 import 'package:shadow_finances/config/dependencies.dart';
-import 'package:shadow_finances/domain/models/app_language.dart';
 import 'package:shadow_finances/domain/models/account_summary.dart';
+import 'package:shadow_finances/domain/models/app_language.dart';
 import 'package:shadow_finances/domain/models/app_theme_mode.dart';
+import 'package:shadow_finances/domain/models/date_range.dart';
 import 'package:shadow_finances/domain/models/expense_category.dart';
 import 'package:shadow_finances/domain/models/financial_summary.dart';
 import 'package:shadow_finances/domain/models/period_summary.dart';
-import 'package:shadow_finances/domain/models/date_range.dart';
 import 'package:shadow_finances/domain/models/totals_ledger.dart';
 import 'package:shadow_finances/domain/models/transaction.dart';
 import 'package:shadow_finances/utils/result.dart';
@@ -292,6 +292,104 @@ void main() {
       reason: 'o seletor continua visível para trocar de período',
     );
   });
+
+  testWidgets('botão de tentar novamente recarrega depois de um erro', (
+    tester,
+  ) async {
+    final expenses = FakeExpenseRepository()..shouldFail = true;
+    await pumpApp(
+      tester,
+      deviceLocales: const [Locale('pt', 'BR')],
+      expenseRepository: expenses,
+    );
+    expect(find.text('Saldo'), findsNothing);
+
+    expenses.shouldFail = false;
+    await tester.tap(find.text('Tentar novamente'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Saldo'), findsOneWidget);
+    expect(find.text('Tentar novamente'), findsNothing);
+  });
+
+  testWidgets('recarrega ao voltar ao app (o dia pode ter virado)', (
+    tester,
+  ) async {
+    final accounts = FakeAccountRepository();
+    await pumpApp(
+      tester,
+      deviceLocales: const [Locale('pt', 'BR')],
+      accountRepository: accounts,
+    );
+    final requests = accounts.requestedRanges.length;
+
+    // App para o segundo plano e de volta, passo a passo, como no aparelho.
+    for (final state in [
+      AppLifecycleState.inactive,
+      AppLifecycleState.hidden,
+      AppLifecycleState.paused,
+      AppLifecycleState.hidden,
+      AppLifecycleState.inactive,
+      AppLifecycleState.resumed,
+    ]) {
+      tester.binding.handleAppLifecycleStateChanged(state);
+    }
+    await tester.pumpAndSettle();
+
+    expect(accounts.requestedRanges, hasLength(requests + 1));
+    expect(find.text('Saldo'), findsOneWidget);
+  });
+
+  // Convenção de UI: nada transborda em 320 dp com fonte em 200%, nos dois
+  // temas. Um transbordamento vira exceção e faz o teste falhar.
+  for (final themeMode in AppThemeMode.values) {
+    testWidgets('telas cabem em 320 dp com fonte em 200% (${themeMode.name})', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(320 * 3, 640 * 3);
+      tester.view.devicePixelRatio = 3;
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.view.reset);
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+
+      final expenses = [
+        for (var day = 1; day <= 7; day++)
+          testExpense('e$day', day, amountCents: 123456789),
+      ];
+      await pumpApp(
+        tester,
+        deviceLocales: const [Locale('pt', 'BR')],
+        repository: FakeSettingsRepository(themeMode: themeMode),
+        accountRepository: _AccountsFromLedger(expenses: expenses),
+        expenseRepository: FakeExpenseRepository(expenses: expenses),
+      );
+      expect(
+        Theme.of(tester.element(find.byType(Scaffold))).brightness,
+        themeMode == AppThemeMode.dark ? Brightness.dark : Brightness.light,
+      );
+
+      // Tela inicial até o gráfico, no fim da rolagem.
+      final chart = find.text('Gastos por categoria');
+      await tester.scrollUntilVisible(chart, 200);
+      expect(tester.takeException(), isNull);
+
+      // Tela de transações.
+      final button = find.text('Ver todas as transações');
+      await tester.scrollUntilVisible(button, -200);
+      await tester.tap(button);
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('Despesa e1'), 200);
+      expect(tester.takeException(), isNull);
+
+      // Configurações.
+      await tester.tap(find.byType(BackButton));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Configurações'));
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(find.text('Français'), 200);
+      expect(tester.takeException(), isNull);
+    });
+  }
 
   testWidgets('segue o idioma do dispositivo', (tester) async {
     await pumpApp(tester, deviceLocales: const [Locale('pt', 'PT')]);

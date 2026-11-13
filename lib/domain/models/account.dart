@@ -1,7 +1,7 @@
 /// Conta onde o dinheiro do usuário está (ex.: conta corrente, carteira).
 ///
-/// Os totais e o saldo não ficam aqui, e sim em `AccountBalance`. Por ora o
-/// usuário tem uma única conta, a principal.
+/// Os totais e o saldo não ficam aqui: o `AccountRepository` os devolve como
+/// `AccountSummary`. Por ora o usuário tem uma única conta, a principal.
 class Account {
   const Account({required this.id, required this.name, this.isMain = false});
 

@@ -1,8 +1,8 @@
+import 'package:shadow_finances/data/repositories/settings/settings_repository.dart';
+import 'package:shadow_finances/data/services/shared_preferences_service.dart';
 import 'package:shadow_finances/domain/models/app_language.dart';
 import 'package:shadow_finances/domain/models/app_theme_mode.dart';
 import 'package:shadow_finances/utils/result.dart';
-import 'package:shadow_finances/data/services/shared_preferences_service.dart';
-import 'package:shadow_finances/data/repositories/settings/settings_repository.dart';
 
 /// [SettingsRepository] que guarda as preferências no próprio dispositivo.
 class SettingsRepositoryLocal implements SettingsRepository {

@@ -26,6 +26,7 @@ class PeriodOverviewScrollView extends StatelessWidget {
     required this.hasError,
     required this.transactions,
     required this.onFilterSelected,
+    required this.onRetry,
     this.listTitle,
     this.footerSlivers = const [],
   });
@@ -38,6 +39,9 @@ class PeriodOverviewScrollView extends StatelessWidget {
   final bool hasError;
   final List<Transaction> transactions;
   final ValueChanged<PeriodFilter> onFilterSelected;
+
+  /// Tenta carregar de novo, pelo botão da mensagem de erro.
+  final VoidCallback onRetry;
 
   /// Cabeçalho da lista; sem ele, a lista começa logo após o card.
   final String? listTitle;
@@ -90,7 +94,7 @@ class PeriodOverviewScrollView extends StatelessWidget {
             child: summary != null
                 ? BalanceSummaryCard(summary: summary)
                 : hasError
-                ? _Message(text: l10n.homeLoadError)
+                ? _ErrorMessage(onRetry: onRetry)
                 : const Center(child: CircularProgressIndicator()),
           ),
         ),
@@ -131,6 +135,28 @@ class _Message extends StatelessWidget {
         style: Theme.of(context).textTheme.bodyLarge,
         textAlign: TextAlign.center,
       ),
+    );
+  }
+}
+
+/// Aviso de que os dados não carregaram, com um botão para tentar de novo.
+class _ErrorMessage extends StatelessWidget {
+  const _ErrorMessage({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return Column(
+      children: [
+        _Message(text: l10n.periodLoadError),
+        FilledButton.tonalIcon(
+          onPressed: onRetry,
+          icon: const Icon(Icons.refresh),
+          label: Text(l10n.retry),
+        ),
+      ],
     );
   }
 }

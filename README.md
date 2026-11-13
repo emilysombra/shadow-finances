@@ -14,6 +14,14 @@ make apk      # gera APK de debug
 make help     # todos os comandos
 ```
 
+Antes de abrir um PR, rode `make format`, `make analyze` e `make test`. O CI
+(GitHub Actions) confere os três em cada PR, com a mesma versão do Flutter do
+Dockerfile.
+
+No Windows, o Docker Desktop não repassa USB para o container, então
+`make run-android` não enxerga um celular ligado pelo cabo. Alternativas:
+`make run-web` para o dia a dia, ou o `make apk` instalado no aparelho.
+
 ## Idiomas
 
 Português (Brasil), Português (Portugal), Espanhol (América Latina), Inglês (EUA)
