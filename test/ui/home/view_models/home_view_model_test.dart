@@ -7,8 +7,8 @@ import 'package:shadow_finances/domain/models/financial_summary.dart';
 import 'package:shadow_finances/domain/models/period_filter.dart';
 import 'package:shadow_finances/domain/models/period_summary.dart';
 import 'package:shadow_finances/domain/use_cases/get_period_overview_use_case.dart';
-import 'package:shadow_finances/utils/result.dart';
 import 'package:shadow_finances/ui/home/view_models/home_view_model.dart';
+import 'package:shadow_finances/utils/result.dart';
 
 import '../../../fakes/fake_account_repository.dart';
 import '../../../fakes/fake_expense_repository.dart';
